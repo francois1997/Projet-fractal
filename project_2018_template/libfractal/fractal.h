@@ -2,8 +2,13 @@
 #define _FRACTAL_H
 
 struct fractal {
-    /* TODO: à remplir */
-};
+    char *name;
+	unsigned long width;
+	unsigned long height;
+	double a;
+	double b;
+	uint16_t *image;
+	};
 
 /*
  * fractal_new: alloue une nouvelle structure fractal

@@ -1,0 +1,12 @@
+Change for version 0.1 : 
+
+File fractal.h :
+*Added fractal structure
+
+File fractal.c :
+*Added fractal creation function
+*Added fractal free function
+*Added fractal getname function
+*Added fractal getValue function
+*implemented strcpy function
+*implemented strlen function
