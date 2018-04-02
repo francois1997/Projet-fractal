@@ -1,3 +1,13 @@
+change for version 0.2 :
+
+File fractal.h :
+*Added description of function strcpy and strlen
+
+File fractal.c :
+*Added fractal setvalue function
+*Added the set of get_ function
+
+
 Change for version 0.1 : 
 
 File fractal.h :

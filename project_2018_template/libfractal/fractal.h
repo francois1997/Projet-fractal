@@ -114,4 +114,26 @@ int fractal_compute_value(struct fractal *f, int x, int y);
  */
 int write_bitmap_sdl(const struct fractal *f, const char *fname);
 
+/*
+ * strlen
+ *
+ * compte le nombre de characters dans un tableau de characters
+ *
+ * @string : tableau de characters
+ * @return : taille du tableau si pas d'erreurs, -1 sinon
+*/
+size_t strlen(const char *string);
+
+/*
+ * stpcpy
+ *
+ * copy un tableau de characters vers une adresse mémoire donnée
+ *
+ * @dest : destination ou le tableau sera copié, doit avoir la bonne taille
+ * @src : tableau de characters à copié
+ *
+ * @return : ne retourne rien
+*/
+void strcpy(char *dest, const char *src)
+
 #endif

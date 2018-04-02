@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include "fractal.h"
 
 struct fractal *fractal_new(const char *name, int width, int height, double a, double b)
@@ -15,7 +16,7 @@ struct fractal *fractal_new(const char *name, int width, int height, double a, d
 	}
 	stpcpy(newFract->name, name);
 	
-	/* newFract->image = (uint16_t **)malloc(sizeof(uint16_t *)*height);			//allocate memory for the table of pointer
+	/* newFract->image = (uint16_t **)malloc(sizeof(uint16_t *)*height);		//allocate memory for the table of pointer
 	if(newFract->image == NULL)
 	{
 		free(newFract->name);
@@ -78,38 +79,45 @@ int fractal_get_value(const struct fractal *f, int x, int y)
 
 void fractal_set_value(struct fractal *f, int x, int y, int val)
 {
-    /* TODO */
+    if(x > f->width || y > f->height)
+	{
+		printf("SEG_fault : set_value");
+		exit(-1);
+	}
+	*((f->image) + x + (f->width)*y) = val;
 }
 
 int fractal_get_width(const struct fractal *f)
 {
-    /* TODO */
-    return 0;
+    return f->width;
 }
 
 int fractal_get_height(const struct fractal *f)
 {
-    /* TODO */
-    return 0;
+    return f->height;
 }
 
 double fractal_get_a(const struct fractal *f)
 {
-    /* TODO */
-    return 0;
+    return f->a;
 }
 
 double fractal_get_b(const struct fractal *f)
 {
-    /* TODO */
-    return 0;
+    return f->b;
 }
 
 size_t strlen(const char *string)
 {
+	if (string == NULL)
+		return -1;
+	
 	int i =0;
 	while (*(string + i) != '\0' && i =< 65)
 		i++;
+	
+	if (i == 66)
+		return -1;
 	
 	return (size_t)i;
 }
