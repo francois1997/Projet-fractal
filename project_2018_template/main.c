@@ -25,6 +25,10 @@ pthread_mutex_t buffycreate;
 sem_t full1;
 sem_t empty1;
 
+pthread_mutex_t buffycalculus;
+sem_t full2;
+sem_t empty2;
+
 
 
 struct parametres {
@@ -210,13 +214,39 @@ void *FractCreate (void *param)
 void *FractCalculus (void *param)
 {
 	struct porometres *para = (struct porometres*)param;
+	struct fractal *fractalis;
 	/* 
-	 * I must still implement the calcul of the mean, each pixel and the acces to both buffer
-	 * I need to create two more semaphores as well a mutex.
 	 * A mecanism is needed to end all the calculus threads when there is no more creator threads and
 	 * the buffer1 is empty.
 	 *
 	*/
+	sem_wait(&full1);
+	pthread_mutex_lock(&buffycreate);
+	fractalis = *((para->buffer1) + sem_getvalue(&full1, 0)-1);
+	*((para->buffer1) + sem_getvalue(&full1, 0)-1) = NULL;
+	pthread_mutex_unlock(&buffycreate);
+	sem_post(&empty1);
+	
+	unsigned long height = fractal_get_height(fractalis);
+	unsigned long width = fractal_get_width(fractalis);
+	for (int i = 0; i < height; i++)
+	{
+		for(int j = 0; j < width; j++)
+		{
+			int k =fractal_compute_value(fractalis, j, i);
+			fractalis->moyenne = (fractalis->moyenne) + k; 
+			fractal_set_value(fractalis, j, i, k);
+		}
+	}
+	fractalis->moyenne = (fractalis->moyenne)/(height * width);
+	
+	
+	sem_wait(&empty2);
+	pthread_mutex_lock(&buffycalculus);
+	*((para->buffer2) + sem_getvalue(&full2, 0)) = fractalis;
+	pthread_mutex_unlock(&buffycalculus);
+	sem_post(&full2);
+	
 }
 	
 
@@ -313,8 +343,10 @@ int main(int argc, char *argv[])
 	const char *d = "-d";
 	const char *maxthreads = "--maxthreads";
 	struct parametres *para;
-	int sem_init(&empty1, 0, argc*2);
-	int sem_init(&full1, 0, 0);
+	sem_init(&empty1, 0, argc*2);
+	sem_init(&full1, 0, 0);
+	sem_init(&full2, 0, 0);
+	sem_init(&empty2, 0, argc*2);
 	struct fractal **Buffer1 = (struct fractal**)malloc(sizeof(struct fractal*) * argc * 2);
 	if (Buffer1 == NULL)
 	{
