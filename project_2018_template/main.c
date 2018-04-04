@@ -22,8 +22,8 @@
 
 
 pthread_mutex_t buffycreate;
-sem_t full;
-sem_t empty;
+sem_t full1;
+sem_t empty1;
 
 
 
@@ -31,12 +31,20 @@ struct parametres {
 	int fd;
 	struct fractal **Buffer;
 	};
+	
+	
+	
+struct porometres {
+	struct fractal** buffer1;
+	struct fractal** buffer2;
+}
 
 
 
 void *FractCreate (void *param)
 {
 	struct parametres *para = (struct parametres*)param;
+	int fd = para->fd;
 	char *name = (char*)malloc(sizeof(char)*65);
 	if (name == NULL)
 	{
@@ -75,7 +83,7 @@ void *FractCreate (void *param)
 		char ispace = '';
 		while(ispace != ' ' && i < 66)
 		{
-			int end =read(fd, (void *)&ispace, sizeof(char));
+			int end =read(fd, (void *)(&ispace), sizeof(char));
 			if(end == -1)
 			{
 				close(para->fd);
@@ -104,7 +112,10 @@ void *FractCreate (void *param)
 			
 			i++;
 			if(i == 66)
+			{
+				fprintf(stderr, "Name is too long \n")
 				i = 100;
+			}
 		}
 		
 		/* this condition here is to skip empty line and comment
@@ -150,24 +161,24 @@ void *FractCreate (void *param)
 		
 		/* This loop serve to go to the next line, only works with file who use LF to go to next the line
 		 * It has a second purpose and it is to get out of the greater loop when we are a the end of the file
-		 * 
+		 * After that it put fractal which he manage to make inside the buffer
 		*/
 		
 		while (ispace != '\n' && test == 1)
-			test = read(fd, (void*)ispace, 1);
+			test = read(fd, (void*)(&ispace), 1);
 		
 		struct fractal *fracty = fractal_new(name, width, height,  a,  b);
 		if (fracty != NULL)
 		{
-			sem_wait(&empty);
+			sem_wait(&empty1);
 			pthread_mutex_lock(&buffycreate);
-			*((para->buffer) + sem_getvalue(&full, 0)) = fracty;
+			*((para->buffer) + sem_getvalue(&full1, 0)) = fracty;
 			pthread_mutex_unlock(&buffycreate);
-			sem_post(&full);
+			sem_post(&full1);
 			//producer comsumer problem
 		}
 		else if (fracty == NULL)
-			fprintf(stderr, "non-critical Malloc Error\n");
+			fprintf(stderr, "Malloc Error on fractal : %s\n", name);
 		
 		
 	}
@@ -249,7 +260,7 @@ void fileopener(int filenumber, char ** filename, int *fd)
 	struct parametres *para = (struct parametres *)malloc(sizeof(struct parametres)*number);
 	if (para == NULL)
 	{
-		fprintf(stderr, "malloc fail");
+		fprintf(stderr, "critical malloc fail");
 		return NULL;
 	}
 	
@@ -279,11 +290,18 @@ int main(int argc, char *argv[])
 	struct fractal **Buffer1 = (struct fractal**)malloc(sizeof(struct fractal*)*argc*2);
 	if (Buffer1 == NULL)
 	{
-		fprintf(stderr, "malloc fail");
+		fprintf(stderr, "malloc fail : Buffer1");
 		return -1;
 	}
-	int sem_init(&empty, 0, argc*2);
-	int sem_init(&full, 0, 0);
+	int sem_init(&empty1, 0, argc*2);
+	int sem_init(&full1, 0, 0);
+	struct fractal **Buffer2 = (struct fractal**)malloc(sizeof(struct fractal*)*argc*2);
+	if (Buffer2 == NULL)
+	{
+		free(Buffer1);
+		fprintf(stderr, "malloc fail : Buffer2");
+		return -1;
+	}
 	
 	
     if (argc => 3)
@@ -333,8 +351,19 @@ int main(int argc, char *argv[])
 		printf("there are missing arguments, hey bro mind stopping putting strain on my code ?\n")
 		return -1;
 	}
+	if (para == NULL)
+	{
+		free(buffer1);
+		for (int i = 0; i < readingThreads; i++)
+			close(fd[i]);
+		
+		exit();
+	}
 	
 	
+	
+	
+	free(buffer1);
 	free(para);
     return 0;
 }

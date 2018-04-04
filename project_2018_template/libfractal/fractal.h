@@ -7,6 +7,7 @@ struct fractal {
 	unsigned long height;
 	double a;
 	double b;
+	double moyenne;
 	uint16_t *image;
 	};
 
