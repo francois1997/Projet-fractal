@@ -40,6 +40,22 @@ struct porometres {
 }
 
 
+int argCmp(char *string1, char *string2)
+{
+	int i =0;
+	while (*(string1 + i) != '\0' && *(string2 +i) != '\0')
+	{
+		if (*(string1 + i) != *(string2 + i))
+			return 0;
+		
+		i++;
+	}
+	if(*(string1 + i) == *(string2 + i))
+		return 1;
+	
+	return 0;
+}
+
 
 void *FractCreate (void *param)
 {
@@ -190,22 +206,19 @@ void *FractCreate (void *param)
 	}
 
 
-int argCmp(char *string1, char *string2)
-{
-	int i =0;
-	while (*(string1 + i) != '\0' && *(string2 +i) != '\0')
-	{
-		if (*(string1 + i) != *(string2 + i))
-			return 0;
-		
-		i++;
-	}
-	if(*(string1 + i) == *(string2 + i))
-		return 1;
-	
-	return 0;
-}
 
+void *FractCalculus (void *param)
+{
+	struct porometres *para = (struct porometres*)param;
+	/* 
+	 * I must still implement the calcul of the mean, each pixel and the acces to both buffer
+	 * I need to create two more semaphores as well a mutex.
+	 * A mecanism is needed to end all the calculus threads when there is no more creator threads and
+	 * the buffer1 is empty.
+	 *
+	*/
+}
+	
 
 /* 
 void RthreadCreation(int readingThreads, char *filename[], pthread_t threadlist[], struct fractal **Buffer)
@@ -273,11 +286,24 @@ void fileopener(int filenumber, char ** filename, int *fd)
 			(para + i)->fd = fd[i];
 			test = pthread_create((threads+i), NULL, &FractCreate, (void*)(para+i))
 			if (test != 0)
-				fprintf(stderr, "thread creation failed, thread number : %i \n", i);
+				fprintf(stderr, "reading thread creation failed, thread number : %i \n", i);
 			
 		}
 	}
 	return para;
+ }
+ 
+ 
+ 
+ 
+ void calculusPublisher(int printNumber, struct porometres *editeurImprimeur, pthread_t *threads)
+ {
+	 for (int i = 0; i < printNumber, i++)
+	 {
+		test = pthread_create(*(threads + i), NULL, &FractCalculus, (void*)editeurImprimeur)
+		if (test != 0)
+			fprintf(stderr, "calculus thread creation failed, thread number : %i \n", i);
+	 }
  }
  
  
@@ -287,82 +313,141 @@ int main(int argc, char *argv[])
 	const char *d = "-d";
 	const char *maxthreads = "--maxthreads";
 	struct parametres *para;
-	struct fractal **Buffer1 = (struct fractal**)malloc(sizeof(struct fractal*)*argc*2);
+	int sem_init(&empty1, 0, argc*2);
+	int sem_init(&full1, 0, 0);
+	struct fractal **Buffer1 = (struct fractal**)malloc(sizeof(struct fractal*) * argc * 2);
 	if (Buffer1 == NULL)
 	{
 		fprintf(stderr, "malloc fail : Buffer1");
 		return -1;
 	}
-	int sem_init(&empty1, 0, argc*2);
-	int sem_init(&full1, 0, 0);
-	struct fractal **Buffer2 = (struct fractal**)malloc(sizeof(struct fractal*)*argc*2);
+	struct fractal **Buffer2 = (struct fractal**)malloc(sizeof(struct fractal*) * argc * 2);
 	if (Buffer2 == NULL)
 	{
 		free(Buffer1);
 		fprintf(stderr, "malloc fail : Buffer2");
 		return -1;
 	}
+	struct porometres *lachouf = (struct porometres*)malloc(sizeof(struct porometres));
+	if (lachouf == NULL)
+	{
+		free(Buffer1);
+		free(Buffer2);
+		fprintf(stderr, "malloc fail : lachouf");
+		return -1;
+	}
+	lachouf->buffer1 = buffer1;
+	lachouf->buffer2 = buffer2;
+	
+	
 	
 	
     if (argc => 3)
 	{
-		if (argCmp(argv[2], d) && argCmp(argv[3], maxthreads))     	//case when both options are used
+		if (argCmp(argv[1], d) && argCmp(argv[2], maxthreads))     	//case when both options are used
 		{
 			int readingThreads = argc - 5;							//-5 because of [nameoffunc, -d, --maxthreads, N, fileout]
 			pthread_t readerThreads[readingThreads];
+			pthread_t calculusThreads[(int)argv[3]];
 			int fd[readingThreads];
 			
 			fileopener(readingThreads, argv[4], fd);
 			para = threadcreate(readerThreads, fd, Buffer1, readingThreads);
+			if (para == NULL)
+			{
+				free(buffer1);
+				free(buffer2);
+				free(lachouf);
+				for (int i = 0; i < readingThreads; i++)
+					close(fd[i]);
+				
+				exit();
+			}
 			
-			
+			calculusPublisher((int)argv[3], lachouf, calculusThreads);
 		}
 		else if (argCmp(argv[1], d))								//case when only -d option is used
 		{
 			int readingThreads = argc - 3;
 			pthread_t readerThreads[readingThreads];
+			pthread_t calculusThreads[argc*4];
 			int fd[readingThreads];
 			
 			fileopener(readingThreads, argv[2]);
 			para = threadcreate(readerThreads, fd, Buffer1, readingThreads);
+			if (para == NULL)
+			{
+				free(buffer1);
+				free(buffer2);
+				free(lachouf);
+				for (int i = 0; i < readingThreads; i++)
+					close(fd[i]);
+				
+				exit();
+			}
+			
+			calculusPublisher(argc*4, lachouf, calculusThreads);
 		}
-		else if (argCmp(argv[2], maxthreads))						//case when only --maxthreads option is used
+		else if (argCmp(argv[1], maxthreads))						//case when only --maxthreads option is used
 		{
 			int readingThreads = argc - 4;
 			pthread_t readerThreads[readingThreads];
+			pthread_t calculusThreads[(int)argv[2]];
 			int fd[readingThreads];
 			
 			fileopener(readingThreads, argv[3]);
 			para = threadcreate(readerThreads, fd, Buffer1, readingThreads);
+			if (para == NULL)
+			{
+				free(buffer1);
+				free(buffer2);
+				free(lachouf);
+				for (int i = 0; i < readingThreads; i++)
+					close(fd[i]);
+				
+				exit();
+			}
+			
+			calculusPublisher((int)argv[3], lachouf, calculusThreads);
 		}
 		else														//case when none of the options are used
 		{
 			int readingThreads = argc - 2;
 			pthread_t readerThreads[readingThreads];
+			pthread_t calculusThreads[argc*4];
 			int fd[readingThreads];
 			
 			fileopener(readingThreads, argv[1]);
 			para = threadcreate(readerThreads, fd, Buffer1, readingThreads);
+			if (para == NULL)
+			{
+				free(buffer1);
+				free(buffer2);
+				free(lachouf);
+				for (int i = 0; i < readingThreads; i++)
+					close(fd[i]);
+				
+				exit();
+			}
+			
+			calculusPublisher(argc*4, lachouf, calculusThreads);
 		}
 	}
 	else
 	{
 		free(Buffer1);
+		free(Buffer2);
+		free(lachouf);
 		printf("there are missing arguments, hey bro mind stopping putting strain on my code ?\n")
 		return -1;
 	}
-	if (para == NULL)
-	{
-		free(buffer1);
-		for (int i = 0; i < readingThreads; i++)
-			close(fd[i]);
-		
-		exit();
-	}
 	
 	
 	
 	
+	
+	free(lachouf);
+	free(buffer2);
 	free(buffer1);
 	free(para);
     return 0;
