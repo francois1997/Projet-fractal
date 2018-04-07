@@ -215,23 +215,26 @@ void *FractCreate (void *param)
 		while (ispace != '\n' && test == 1)
 			test = read(fd, (void*)(&ispace), 1);
 		
-		struct fractal *fracty = fractal_new(name, width, height,  a,  b);
-		if (fracty != NULL)
+		if (i != 100)
 		{
-			int tardy;
-			sem_getvalue(&full1, &tardy);
-			sem_wait(&empty1);
-			pthread_mutex_lock(&buffycreate);
-			*((para->buffer) + tardy) = fracty;
-			fracty = NULL;
-			pthread_mutex_unlock(&buffycreate);
-			sem_post(&full1);
-			//producer comsumer problem
+			//i need to make a linked list with the name of the fractal, and be able to compare to avoid multiple
+			struct fractal *fracty = fractal_new(name, width, height,  a,  b);
+			if (fracty != NULL)
+			{
+				int tardy;
+				sem_getvalue(&full1, &tardy);
+				sem_wait(&empty1);
+				pthread_mutex_lock(&buffycreate);
+				*((para->buffer) + tardy) = fracty;
+				fracty = NULL;
+				pthread_mutex_unlock(&buffycreate);
+				sem_post(&full1);
+				//producer comsumer problem
+			}
+			else if (fracty == NULL)
+				fprintf(stderr, "Malloc Error on fractal : %s\n", name);
+		
 		}
-		else if (fracty == NULL)
-			fprintf(stderr, "Malloc Error on fractal : %s\n", name);
-		
-		
 	}
 	
 	
@@ -378,6 +381,7 @@ void fileopener(int filenumber, char ** filename, int *fd)
 	}
 	sem_init(&rdv1,0,rendevous);
 	if (rendevous == 0)
+		fprintf(stderr, "No reading threads created");
 		return NULL;
 	
 	return para;
@@ -400,6 +404,9 @@ void fileopener(int filenumber, char ** filename, int *fd)
 		}	
 	}
 	sem_init(rdv2, 0, rendevous);
+	if (rendevous == 0)
+		fprintf(stderr, "no calculating threads created");
+	
 	return rendevous;
  }
  
@@ -487,6 +494,7 @@ int main(int argc, char *argv[])
 				sem_destroy(&empty2);
 				sem_destroy(&full1);
 				sem_destroy(&full2);
+				sem_destroy(&rdv1);
 				for (int i = 0; i < readingThreads; i++)
 					close(fd[i]);
 				
@@ -505,6 +513,8 @@ int main(int argc, char *argv[])
 				sem_destroy(&empty2);
 				sem_destroy(&full1);
 				sem_destroy(&full2);
+				sem_destroy(&rdv1);
+				sem_destroy(&rdv2);
 				for (int i = 0; i < readingThreads; i++)
 					close(fd[i]);
 				
@@ -512,15 +522,25 @@ int main(int argc, char *argv[])
 				exit();
 			}
 			
+			
+			//thread creation to create each images
+			
 		}
 		else if (argCmp(argv[1], d))								//case when only -d option is used
 		{
+			//checking how many threads should be created for reading and calculating
+			
 			int readingThreads = argc - 3;
 			pthread_t readerThreads[readingThreads];
 			pthread_t calculusThreads[argc*4];
 			int fd[readingThreads];
 			
+			//opening the streams for the files
+			
 			fileopener(readingThreads, argv[2], fd);
+			
+			//creating the threads for reading
+			
 			para = threadcreate(readerThreads, fd, Buffer1, readingThreads);
 			if (para == NULL)
 			{
@@ -531,11 +551,14 @@ int main(int argc, char *argv[])
 				sem_destroy(&empty2);
 				sem_destroy(&full1);
 				sem_destroy(&full2);
+				sem_destroy(&rdv1);
 				for (int i = 0; i < readingThreads; i++)
 					close(fd[i]);
 				
 				exit();
 			}
+			
+			//creation of calculating threads
 			
 			int deadlockDect = calculusPublisher(argc*4, lachouf, calculusThreads);
 			if (deadlockDect == 0)
@@ -547,12 +570,18 @@ int main(int argc, char *argv[])
 				sem_destroy(&empty2);
 				sem_destroy(&full1);
 				sem_destroy(&full2);
+				sem_destroy(&rdv1);
+				sem_destroy(&rdv2);
 				for (int i = 0; i < readingThreads; i++)
 					close(fd[i]);
 				
 				fprintf(stderr, "it didn't like that at all");
 				exit();
 			}
+			
+			//thread creation to create each image
+			
+			
 		}
 		else if (argCmp(argv[1], maxthreads))						//case when only --maxthreads option is used
 		{
@@ -579,6 +608,7 @@ int main(int argc, char *argv[])
 				sem_destroy(&empty2);
 				sem_destroy(&full1);
 				sem_destroy(&full2);
+				sem_destroy(&rdv1);
 				for (int i = 0; i < readingThreads; i++)
 					close(fd[i]);
 				
@@ -597,6 +627,8 @@ int main(int argc, char *argv[])
 				sem_destroy(&empty2);
 				sem_destroy(&full1);
 				sem_destroy(&full2);
+				sem_destroy(&rdv1);
+				sem_destroy(&rdv2);
 				for (int i = 0; i < readingThreads; i++)
 					close(fd[i]);
 				
@@ -665,6 +697,7 @@ int main(int argc, char *argv[])
 				sem_destroy(&empty2);
 				sem_destroy(&full1);
 				sem_destroy(&full2);
+				sem_destroy(&rdv1);
 				for (int i = 0; i < readingThreads; i++)
 					close(fd[i]);
 				
@@ -683,6 +716,8 @@ int main(int argc, char *argv[])
 				sem_destroy(&empty2);
 				sem_destroy(&full1);
 				sem_destroy(&full2);
+				sem_destroy(&rdv1);
+				sem_destroy(&rdv2);
 				for (int i = 0; i < readingThreads; i++)
 					close(fd[i]);
 				
@@ -750,5 +785,7 @@ int main(int argc, char *argv[])
 	sem_destroy(&empty2);
 	sem_destroy(&full1);
 	sem_destroy(&full2);
+	sem_destroy(&rdv1);
+	sem_destroy(&rdv2);
     return 0;
 }
