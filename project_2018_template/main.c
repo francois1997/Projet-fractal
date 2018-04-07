@@ -15,9 +15,11 @@
 /* it is important to implement a rendez vous semaphore in main for it to wait for the threads to finish before 
  * finishing itself Done
  * a new thread is to be created to avoid the deadlock on the calculus
- * if by a test of somoene the calculus threads failed to be created another deadlock can appear
+ * that single thread will check that th creating threads are no more and that the buffer is empty as well as wait for a set amount of time
+ * to kill all threads.
+ * if by a test of someone the calculus threads failed to be created another deadlock can appear
  * when the main enter the while where it checks the threads and the buffer
- *
+ * also i should implement a failsafe for when neither the calculus threads or reading threads are created
  *
 */
 
@@ -67,6 +69,19 @@ int argCmp(char *string1, char *string2)
 
 void *FractCreate (void *param)
 {
+	//check that calculating threads have been created before launching anything
+	
+	int test2 = 0;
+	
+	
+	while (test2 == 0)
+	{
+		sem_getvalue(&rdv2, &test2);
+		sleep(1);
+	}
+
+	//start execution
+	
 	struct parametres *para = (struct parametres*)param;
 	int fd = para->fd;
 	char *name = (char*)malloc(sizeof(char)*65);
@@ -125,6 +140,8 @@ void *FractCreate (void *param)
 				sem_wait(rdv1);
 				pthread_exit(NULL);
 			}
+			
+			//it checks wether it is a comment or an empty line
 			
 			if((ispace != '#' && i == 0) || (i == 0 && ispace == ' '))
 			{
@@ -206,6 +223,7 @@ void *FractCreate (void *param)
 			sem_wait(&empty1);
 			pthread_mutex_lock(&buffycreate);
 			*((para->buffer) + tardy) = fracty;
+			fracty = NULL;
 			pthread_mutex_unlock(&buffycreate);
 			sem_post(&full1);
 			//producer comsumer problem
@@ -359,13 +377,16 @@ void fileopener(int filenumber, char ** filename, int *fd)
 		}
 	}
 	sem_init(&rdv1,0,rendevous);
+	if (rendevous == 0)
+		return NULL;
+	
 	return para;
  }
  
  
  
  
- void calculusPublisher(int printNumber, struct porometres *editeurImprimeur, pthread_t *threads)
+ int calculusPublisher(int printNumber, struct porometres *editeurImprimeur, pthread_t *threads)
  {
 	int rendevous = 0; 
 	for (int i = 0; i < printNumber, i++)
@@ -379,12 +400,15 @@ void fileopener(int filenumber, char ** filename, int *fd)
 		}	
 	}
 	sem_init(rdv2, 0, rendevous);
+	return rendevous;
  }
  
  
 
 int main(int argc, char *argv[])
 {
+	// initialisation of all the variables needed
+	
 	const char *d = "-d";
 	const char *maxthreads = "--maxthreads";
 	struct fractal *fractalis;
@@ -433,18 +457,26 @@ int main(int argc, char *argv[])
 	lachouf->buffer2 = buffer2;
 	
 	
+	//checking the number of arguments, a input file and output file is always needed
 	
 	
     if (argc => 3)
 	{
 		if (argCmp(argv[1], d) && argCmp(argv[2], maxthreads))     	//case when both options are used
 		{
+			//checking how many threads should be created for reading and calculating
+			
 			int readingThreads = argc - 5;							//-5 because of [nameoffunc, -d, --maxthreads, N, fileout]
 			pthread_t readerThreads[readingThreads];
 			pthread_t calculusThreads[(int)argv[3]];
 			int fd[readingThreads];
 			
+			//opening the streams for the files
+			
 			fileopener(readingThreads, argv[4], fd);
+			
+			//creating the threads for reading
+			
 			para = threadcreate(readerThreads, fd, Buffer1, readingThreads);
 			if (para == NULL)
 			{
@@ -461,7 +493,25 @@ int main(int argc, char *argv[])
 				exit();
 			}
 			
-			calculusPublisher((int)argv[3], lachouf, calculusThreads);
+			//creating the threads for calculating
+			
+			int deadlockDect = calculusPublisher((int)argv[3], lachouf, calculusThreads);
+			if (deadlockDect == 0)
+			{
+				free(buffer1);
+				free(buffer2);
+				free(lachouf);
+				sem_destroy(&empty1);
+				sem_destroy(&empty2);
+				sem_destroy(&full1);
+				sem_destroy(&full2);
+				for (int i = 0; i < readingThreads; i++)
+					close(fd[i]);
+				
+				fprintf(stderr, "it didn't like that at all");
+				exit();
+			}
+			
 		}
 		else if (argCmp(argv[1], d))								//case when only -d option is used
 		{
@@ -487,7 +537,22 @@ int main(int argc, char *argv[])
 				exit();
 			}
 			
-			calculusPublisher(argc*4, lachouf, calculusThreads);
+			int deadlockDect = calculusPublisher(argc*4, lachouf, calculusThreads);
+			if (deadlockDect == 0)
+			{
+				free(buffer1);
+				free(buffer2);
+				free(lachouf);
+				sem_destroy(&empty1);
+				sem_destroy(&empty2);
+				sem_destroy(&full1);
+				sem_destroy(&full2);
+				for (int i = 0; i < readingThreads; i++)
+					close(fd[i]);
+				
+				fprintf(stderr, "it didn't like that at all");
+				exit();
+			}
 		}
 		else if (argCmp(argv[1], maxthreads))						//case when only --maxthreads option is used
 		{
@@ -522,7 +587,22 @@ int main(int argc, char *argv[])
 			
 			//creation of calculating threads
 			
-			calculusPublisher((int)argv[3], lachouf, calculusThreads);
+			int deadlockDect = calculusPublisher((int)argv[3], lachouf, calculusThreads);
+			if (deadlockDect == 0)
+			{
+				free(buffer1);
+				free(buffer2);
+				free(lachouf);
+				sem_destroy(&empty1);
+				sem_destroy(&empty2);
+				sem_destroy(&full1);
+				sem_destroy(&full2);
+				for (int i = 0; i < readingThreads; i++)
+					close(fd[i]);
+				
+				fprintf(stderr, "it didn't like that at all");
+				exit();
+			}
 			
 			//comparaison between fractal and freeing of the memory occupied
 			
@@ -593,7 +673,22 @@ int main(int argc, char *argv[])
 			
 			//creation of calculating threads
 			
-			calculusPublisher(argc*4, lachouf, calculusThreads);
+			int deadlockDect = calculusPublisher(argc*4, lachouf, calculusThreads);
+			if (deadlockDect == 0)
+			{
+				free(buffer1);
+				free(buffer2);
+				free(lachouf);
+				sem_destroy(&empty1);
+				sem_destroy(&empty2);
+				sem_destroy(&full1);
+				sem_destroy(&full2);
+				for (int i = 0; i < readingThreads; i++)
+					close(fd[i]);
+				
+				fprintf(stderr, "it didn't like that at all");
+				exit();
+			}
 			
 			//comparaison between fractal and freeing of the memory occupied
 			
