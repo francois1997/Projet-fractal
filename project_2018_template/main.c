@@ -34,6 +34,7 @@ sem_t empty2;
 
 sem_t rdv1;
 sem_t rdv2;
+sem_t rdv3;
 
 
 
@@ -72,11 +73,12 @@ void *FractCreate (void *param)
 	//check that calculating threads have been created before launching anything
 	
 	int test2 = 0;
+	int test3 = -1;
 	
 	
-	while (test2 == 0)
+	while (test2 == 0 || test3 == -1)
 	{
-		sem_getvalue(&rdv2, &test2);
+		test3 = sem_getvalue(&rdv2, &test2);
 		sleep(1);
 	}
 
@@ -121,7 +123,7 @@ void *FractCreate (void *param)
 		
 		int i = 0;
 		char ispace = '';
-		while(ispace != ' ' && i < 66)
+		while(ispace != ' ' && i < 65)
 		{
 			int end =read(fd, (void *)(&ispace), sizeof(char));
 			if(end == -1)
@@ -151,15 +153,17 @@ void *FractCreate (void *param)
 			{
 				*(name + i) = ispace;
 			}
-			else if(ispace == ' ')
+			else if(ispace == ' ' && i < 64)
 				*(name + i) = '\0';
 			
-			i++;
-			if(i == 66)
+			if(i == 64)
 			{
 				fprintf(stderr, "Name is too long \n")
 				i = 100;
 			}
+			if (i != 100)
+				i++;
+			
 		}
 		
 		/* this condition here is to skip empty line and comment
@@ -247,7 +251,7 @@ void *FractCreate (void *param)
 
 
 
-	/*Haute possibilité de deadlock dans fractCalculus*/
+	/*Haute possibilité de deadlock dans fractCalculus FIXED*/
 	
 void *FractCalculus (void *param)
 {
@@ -266,35 +270,37 @@ void *FractCalculus (void *param)
 	sem_getvalue(&full1, &test2);
 	while (test1 != 0 || test2 != 0)
 	{		
-		sem_wait(&full1);
-		pthread_mutex_lock(&buffycreate);
-		sem_getvalue(&full1, &buffpos1);
-		fractalis = *((para->buffer1) + buffpos1 - 1);
-		*((para->buffer1) + buffpos1 - 1) = NULL;
-		pthread_mutex_unlock(&buffycreate);
-		sem_post(&empty1);
-		
-		unsigned long height = fractal_get_height(fractalis);
-		unsigned long width = fractal_get_width(fractalis);
-		for (int i = 0; i < height; i++)
+		if (sem_trywait(&full1) == 0)
 		{
-			for(int j = 0; j < width; j++)
+		
+			pthread_mutex_lock(&buffycreate);
+			sem_getvalue(&full1, &buffpos1);
+			fractalis = *((para->buffer1) + buffpos1 - 1);
+			*((para->buffer1) + buffpos1 - 1) = NULL;
+			pthread_mutex_unlock(&buffycreate);
+			sem_post(&empty1);
+			
+			unsigned long height = fractal_get_height(fractalis);
+			unsigned long width = fractal_get_width(fractalis);
+			for (int i = 0; i < height; i++)
 			{
-				int k =fractal_compute_value(fractalis, j, i);
-				fractalis->moyenne = (fractalis->moyenne) + k; 
-				fractal_set_value(fractalis, j, i, k);
+				for(int j = 0; j < width; j++)
+				{
+					int k =fractal_compute_value(fractalis, j, i);
+					fractalis->moyenne = (fractalis->moyenne) + k; 
+					fractal_set_value(fractalis, j, i, k);
+				}
 			}
+			fractalis->moyenne = (fractalis->moyenne)/(height * width);
+			
+			
+			sem_wait(&empty2);
+			pthread_mutex_lock(&buffycalculus);
+			sem_getvalue(&full2, &buffpos2);
+			*((para->buffer2) + buffpos2) = fractalis;
+			pthread_mutex_unlock(&buffycalculus);
+			sem_post(&full2);
 		}
-		fractalis->moyenne = (fractalis->moyenne)/(height * width);
-		
-		
-		sem_wait(&empty2);
-		pthread_mutex_lock(&buffycalculus);
-		sem_getvalue(&full2, &buffpos2);
-		*((para->buffer2) + buffpos2) = fractalis;
-		pthread_mutex_unlock(&buffycalculus);
-		sem_post(&full2);
-		
 		sem_getvalue(&rdv1, &test1);
 		sem_getvalue(&full1, &test2);
 	}
@@ -302,6 +308,44 @@ void *FractCalculus (void *param)
 	
 	sem_wait(&rdv2);
 	pthread_exit(NULL);
+}
+	
+	
+void *BitCreator (void *param)
+{
+	struct fractal **buffer = (struct fractal**)param;
+	int buffpos2;
+	struct fractal *fractalis;
+	int test1 = 0;
+	int test2 = 0;
+	sem_getvalue(&rdv2, &test2);
+	sem_getvalue(&full2, &test1);
+	
+	while (test1 != 0 || test2 != 0)
+	{
+		if (sem_trywait(&full2))
+		{
+			pthread_mutex_lock(&buffycalculus);
+			sem_getvalue(&full2, &buffpos2);
+			fractalis = *(buffer + buffpos2 - 1);
+			*(buffer + buffpos2 - 1) == NULL;
+			pthread_mutex_unlock(&buffycalculus);
+			sem_post(&empty2);
+			
+			
+			if (write_bitmap_sdl((const struct fractal*)fractalis, (const char *)(fractalis->name)) == -1)
+			{
+				fprintf(stderr, "seems like the fractal : %s didn't create itself \n", fractalis->name);
+			}
+			fractal_free(fractalis);
+			fractalis = NULL;
+		}
+		
+		sem_getvalue(&rdv2, &test2);
+		sem_getvalue(&full2, &test1);
+	}
+	
+	sem_wait(&rdv3);
 }
 	
 
@@ -393,9 +437,10 @@ void fileopener(int filenumber, char ** filename, int *fd)
  int calculusPublisher(int printNumber, struct porometres *editeurImprimeur, pthread_t *threads)
  {
 	int rendevous = 0; 
+	int test = 0;
 	for (int i = 0; i < printNumber, i++)
 	{
-		test = pthread_create(*(threads + i), NULL, &FractCalculus, (void*)editeurImprimeur)
+		test = pthread_create((threads + i), NULL, &FractCalculus, (void*)editeurImprimeur)
 		rendevous++;
 		if (test != 0)
 		{
@@ -403,13 +448,33 @@ void fileopener(int filenumber, char ** filename, int *fd)
 			fprintf(stderr, "calculus thread creation failed, thread number : %i \n", i);
 		}	
 	}
-	sem_init(rdv2, 0, rendevous);
+	sem_init(&rdv2, 0, rendevous);
 	if (rendevous == 0)
 		fprintf(stderr, "no calculating threads created");
 	
 	return rendevous;
  }
  
+ 
+ 
+ int bitThreadsCreate(int ThreadNumber, struct fractal **buffer, pthread_t *threads)
+ {
+	int rendevous = 0;
+	int test = 0;
+	for (int i =0; i < ThreadNumber; i++)
+	{
+		test = pthread_create((threads+i), NULL, &BitCreator , (void*)buffer);
+		rendevous++;
+		if (test != 0)
+		{
+			rendevous--;
+			fprintf(stderr, "Bitmap creation thread failed initialisation");
+		}
+	}
+	sem_init(&rdv3, 0, rendevous);
+	return rendevous;
+	
+ }
  
 
 int main(int argc, char *argv[])
@@ -418,7 +483,7 @@ int main(int argc, char *argv[])
 	
 	const char *d = "-d";
 	const char *maxthreads = "--maxthreads";
-	struct fractal *fractalis;
+	struct fractal *fractalis = NULL;
 	struct fractal *compa;
 	struct parametres *para;
 	int test1;
@@ -476,6 +541,7 @@ int main(int argc, char *argv[])
 			int readingThreads = argc - 5;							//-5 because of [nameoffunc, -d, --maxthreads, N, fileout]
 			pthread_t readerThreads[readingThreads];
 			pthread_t calculusThreads[(int)argv[3]];
+			pthread_t BitThreads[(int)argv[3]];
 			int fd[readingThreads];
 			
 			//opening the streams for the files
@@ -522,8 +588,52 @@ int main(int argc, char *argv[])
 				exit();
 			}
 			
+			// creating threads to create each image
 			
-			//thread creation to create each images
+			int bitThreads = bitThreadsCreate((int)argv[3], buffer2, BitThreads);
+			if (bitThreads == 0)
+			{
+				fprintf(stderr, "welp it's gonna be slow");
+				int test11 = 0;
+				int test12 = 0;
+				sem_getvalue(&rdv2, &test11);
+				sem_getvalue(&full2, &test12);
+				
+				while (test11 != 0 || test12 != 0)
+				{
+					if (sem_trywait(&full2) == 0)
+					{
+						pthread_mutex_lock(&buffycalculus);
+						sem_getvalue(&full2, &buffpos2);
+						fractalis = *(buffer2 + buffpos2 - 1);
+						*(buffer2 + buffpos2 - 1) == NULL;
+						pthread_mutex_unlock(&buffycalculus);
+						sem_post(&empty2);
+						
+						
+						if (write_bitmap_sdl((const struct fractal*)fractalis, (const char *)(fractalis->name)) == -1)
+						{
+							fprintf(stderr, "seems like the fractal : %s didn't create itself \n", fractalis->name);
+						}
+						fractal_free(fractalis);
+						fractalis = NULL;
+					}
+					
+					sem_getvalue(&rdv2, &test11);
+					sem_getvalue(&full2, &test12);
+				}
+				
+				
+			}
+			
+			int rendezvous3 = 0;
+			sem_getvalue(&rdv3, &rendezvous3);
+			while (rendezvous3 != 0)
+			{
+				sleep(5);
+				sem_getvalue(&rdv3, &rendevous3);
+			}
+
 			
 		}
 		else if (argCmp(argv[1], d))								//case when only -d option is used
@@ -533,6 +643,7 @@ int main(int argc, char *argv[])
 			int readingThreads = argc - 3;
 			pthread_t readerThreads[readingThreads];
 			pthread_t calculusThreads[argc*4];
+			pthread_t BitThreads[argc*3];
 			int fd[readingThreads];
 			
 			//opening the streams for the files
@@ -579,8 +690,51 @@ int main(int argc, char *argv[])
 				exit();
 			}
 			
-			//thread creation to create each image
+			//creation of bitmap creation threads as well as a failsafe in case we are unable to create them
 			
+			int bitThreads = bitThreadsCreate(argc*3, buffer2, BitThreads);
+			if (bitThreads == 0)
+			{
+				fprintf(stderr, "welp it's gonna be slow");
+				int test11 = 0;
+				int test12 = 0;
+				sem_getvalue(&rdv2, &test11);
+				sem_getvalue(&full2, &test12);
+				
+				while (test11 != 0 || test12 != 0)
+				{
+					if (sem_trywait(&full2) == 0)
+					{
+						pthread_mutex_lock(&buffycalculus);
+						sem_getvalue(&full2, &buffpos2);
+						fractalis = *(buffer2 + buffpos2 - 1);
+						*(buffer2 + buffpos2 - 1) == NULL;
+						pthread_mutex_unlock(&buffycalculus);
+						sem_post(&empty2);
+						
+						
+						if (write_bitmap_sdl((const struct fractal*)fractalis, (const char *)(fractalis->name)) == -1)
+						{
+							fprintf(stderr, "seems like the fractal : %s didn't create itself \n", fractalis->name);
+						}
+						fractal_free(fractalis);
+						fractalis = NULL;
+					}
+					
+					sem_getvalue(&rdv2, &test11);
+					sem_getvalue(&full2, &test12);
+				}
+				
+				
+			}
+			
+			int rendezvous3 = 0;
+			sem_getvalue(&rdv3, &rendezvous3);
+			while (rendezvous3 != 0)
+			{
+				sleep(5);
+				sem_getvalue(&rdv3, &rendevous3);
+			}
 			
 		}
 		else if (argCmp(argv[1], maxthreads))						//case when only --maxthreads option is used
@@ -642,27 +796,32 @@ int main(int argc, char *argv[])
 			sem_getvalue(&rdv2, test1);
 			while(test1 != 0 || test2 != 0)
 			{
-				sem_wait(&full2);
-				pthread_mutex_lock(&buffycalculus);
-				int buffpos2;
-				sem_getvalue(&full2, &buffpos2);
-				compa = *((para->buffer2) + buffpos2);
-				pthread_mutex_unlock(&buffycalculus);
-				sem_post(&empty2);
-				
-				if (fractalis != NULL)
+				if (sem_trywait(&full2) == 0)
 				{
-					if (compa->moyenne > fractalis->moyenne)
+					pthread_mutex_lock(&buffycalculus);
+					int buffpos2;
+					sem_getvalue(&full2, &buffpos2);
+					compa = *((para->buffer2) + buffpos2);
+					pthread_mutex_unlock(&buffycalculus);
+					sem_post(&empty2);
+					
+					if (fractalis != NULL)
 					{
-						fractal_free(fractalis);
-						fractalis = compa;
+						if (compa->moyenne > fractalis->moyenne)
+						{
+							fractal_free(fractalis);
+							fractalis = compa;
+						}
+						else
+							fractal_free(compa);
+						
 					}
 					else
-						fractal_free(compa);
+						fractalis = compa;
 					
 				}
-				else
-					fractalis = compa;
+				sem_getvalue(&full2, test2);
+				sem_getvalue(&rdv2, test1);
 			}
 			
 			//creating the bitmap image
@@ -731,27 +890,35 @@ int main(int argc, char *argv[])
 			sem_getvalue(&rdv2, test1);
 			while(test1 != 0 || test2 != 0)
 			{
-				sem_wait(&full2);
-				pthread_mutex_lock(&buffycalculus);
-				int buffpos2;
-				sem_getvalue(&full2, &buffpos2);
-				compa = *((para->buffer2) + buffpos2);
-				pthread_mutex_unlock(&buffycalculus);
-				sem_post(&empty2);
-				
-				if (fractalis != NULL)
+				if (sem_trywait(&full2) == 0)
 				{
-					if (compa->moyenne > fractalis->moyenne)
+					pthread_mutex_lock(&buffycalculus);
+					int buffpos2;
+					sem_getvalue(&full2, &buffpos2);
+					compa = *((para->buffer2) + buffpos2);
+					pthread_mutex_unlock(&buffycalculus);
+					sem_post(&empty2);
+					
+					if (fractalis != NULL)
 					{
-						fractal_free(fractalis);
-						fractalis = compa;
+						if (compa->moyenne > fractalis->moyenne)
+						{
+							fractal_free(fractalis);
+							fractalis = compa;
+						}
+						else
+						{
+							fractal_free(compa);
+							compa == NULL;
+						}
 					}
 					else
-						fractal_free(compa);
+						fractalis = compa;
+					
 					
 				}
-				else
-					fractalis = compa;
+				sem_getvalue(&full2, test2);
+				sem_getvalue(&rdv2, test1);
 			}
 			
 			//Bitmap creation
@@ -787,5 +954,6 @@ int main(int argc, char *argv[])
 	sem_destroy(&full2);
 	sem_destroy(&rdv1);
 	sem_destroy(&rdv2);
+	sem_destroy(&rdv3);
     return 0;
 }
