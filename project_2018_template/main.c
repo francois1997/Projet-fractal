@@ -902,8 +902,8 @@ int main(int argc, char *argv[]){
 					
 					
 				}
-				sem_getvalue(&full2, test2);
-				sem_getvalue(&rdv2, test1);
+				sem_getvalue(&full2, &test2);
+				sem_getvalue(&rdv2, &test1);
 			}
 			
 			//Bitmap creation
@@ -930,8 +930,8 @@ int main(int argc, char *argv[]){
 	
 	fractal_free(fractalis);
 	free(lachouf);
-	free(buffer2);
-	free(buffer1);
+	free(Buffer2);
+	free(Buffer1);
 	free(para);
 	sem_destroy(&empty1);
 	sem_destroy(&empty2);
