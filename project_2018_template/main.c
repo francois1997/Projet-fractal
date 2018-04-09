@@ -13,13 +13,11 @@
 
 
 /* it is important to implement a rendez vous semaphore in main for it to wait for the threads to finish before 
- * finishing itself Done
- * a new thread is to be created to avoid the deadlock on the calculus
- * that single thread will check that th creating threads are no more and that the buffer is empty as well as wait for a set amount of time
- * to kill all threads.
- * if by a test of someone the calculus threads failed to be created another deadlock can appear
+ * finishing itself Done FIXED
+ * a new thread is to be created to avoid the deadlock on the calculus FIXED
+ * if by a test of someone the calculus threads failed to be created another deadlock can appear FIXED
  * when the main enter the while where it checks the threads and the buffer
- * also i should implement a failsafe for when neither the calculus threads or reading threads are created
+ * also i should implement a failsafe for when neither the calculus threads or reading threads are created FIXED
  *
 */
 
