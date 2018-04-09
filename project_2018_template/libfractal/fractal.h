@@ -117,6 +117,17 @@ int fractal_compute_value(struct fractal *f, int x, int y);
  */
 int write_bitmap_sdl(const struct fractal *f, const char *fname);
 
+/*
+ * argCmp
+ *
+ * Compare two string despite being called argCmp
+ *
+ * @string1 first string to compare
+ * @string2 second string to compare
+ * @return 1 if the strings matches, 0 otherwise
+ * note : the \0 character has to match as well
+ */
 
+int argCmp(char *string1, char *string2);
 
 #endif

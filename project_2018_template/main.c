@@ -49,22 +49,6 @@ struct porometres {
 }
 
 
-int argCmp(char *string1, char *string2)
-{
-	int i =0;
-	while (*(string1 + i) != '\0' && *(string2 +i) != '\0')
-	{
-		if (*(string1 + i) != *(string2 + i))
-			return 0;
-		
-		i++;
-	}
-	if(*(string1 + i) == *(string2 + i))
-		return 1;
-	
-	return 0;
-}
-
 
 void *FractCreate (void *param)
 {
@@ -89,7 +73,7 @@ void *FractCreate (void *param)
 	{
 		fprintf(stderr, "critical malloc failure\n");
 		close(para->fd);
-		sem_wait(rdv1);
+		sem_wait(&rdv1);
 		pthread_exit(NULL);
 	}
 	
@@ -120,7 +104,7 @@ void *FractCreate (void *param)
 		
 		
 		int i = 0;
-		char ispace = '';
+		char ispace = 0;
 		while(ispace != ' ' && i < 65)
 		{
 			int end =read(fd, (void *)(&ispace), sizeof(char));
@@ -129,7 +113,7 @@ void *FractCreate (void *param)
 				close(para->fd);
 				free(name);
 				fprintf(stderr, "Error while reading\n");
-				sem_wait(rdv1);
+				sem_wait(&rdv1);
 				pthread_exit(NULL);
 			}
 			else if (end == 0)
@@ -137,13 +121,13 @@ void *FractCreate (void *param)
 				close(para->fd);
 				free(name);
 				printf("Process finished\n");
-				sem_wait(rdv1);
+				sem_wait(&rdv1);
 				pthread_exit(NULL);
 			}
 			
 			//it checks wether it is a comment or an empty line
 			
-			if((ispace != '#' && i == 0) || (i == 0 && ispace == ' '))
+			if ((ispace != '#' && i == 0) || (i == 0 && ispace == ' '))
 			{
 				i == 100;
 			}
@@ -156,7 +140,7 @@ void *FractCreate (void *param)
 			
 			if(i == 64)
 			{
-				fprintf(stderr, "Name is too long \n")
+				fprintf(stderr, "Name is too long \n");
 				i = 100;
 			}
 			if (i != 100)
@@ -177,7 +161,7 @@ void *FractCreate (void *param)
 				close(para->fd);
 				free(name);
 				fprintf(stderr, "Error while reading\n");
-				sem_wait(rdv1);
+				sem_wait(&rdv1);
 				pthread_exit(NULL);
 			}
 			lseek(fd, 1, SEEK_CUR);
@@ -186,7 +170,7 @@ void *FractCreate (void *param)
 				close(para->fd);
 				free(name);
 				fprintf(stderr, "Error while reading\n");
-				sem_wait(rdv1);
+				sem_wait(&rdv1);
 				pthread_exit(NULL);
 			}
 			lseek(fd, 1, SEEK_CUR);
@@ -195,7 +179,7 @@ void *FractCreate (void *param)
 				close(para->fd);
 				free(name);
 				fprintf(stderr, "Error while reading\n");
-				sem_wait(rdv1);
+				sem_wait(&rdv1);
 				pthread_exit(NULL);
 			}
 			lseek(fd, 1, SEEK_CUR);
@@ -204,7 +188,7 @@ void *FractCreate (void *param)
 				close(para->fd);
 				free(name);
 				fprintf(stderr, "Error while reading\n");
-				sem_wait(rdv1);
+				sem_wait(&rdv1);
 				pthread_exit(NULL);
 			}
 		}
@@ -227,7 +211,7 @@ void *FractCreate (void *param)
 				sem_getvalue(&full1, &tardy);
 				sem_wait(&empty1);
 				pthread_mutex_lock(&buffycreate);
-				*((para->buffer) + tardy) = fracty;
+				*((para->Buffer) + tardy) = fracty;
 				fracty = NULL;
 				pthread_mutex_unlock(&buffycreate);
 				sem_post(&full1);
@@ -243,7 +227,7 @@ void *FractCreate (void *param)
 	
 	free(name);
 	close(fd);
-	sem_wait(rdv1);
+	sem_wait(&rdv1);
 	pthread_exit(NULL);
 	}
 
@@ -372,20 +356,20 @@ void RthreadCreation(int readingThreads, char *filename[], pthread_t threadlist[
  */
  
  
-void fileopener(int filenumber, char ** filename, int *fd)
+void fileopener(int filenumber, char ** filename, int *fd, int offset)
  {
 	int control = 0;
-	for (int i = 0; i < filnumber; i++)
+	for (int i = 0; i < filenumber; i++)
 	{
-		if(!argCmp(filename[i], "-"))
+		if(!argCmp(filename[i + offset], "-"))
 		{
-			fd[i] = open(filename[i], O_RDONLY);
+			fd[i] = open(filename[i + offset], O_RDONLY);
 			if (fd[i] == -1)
 			{
-				fprintf(stderr, "error, unable to open File : %s \n", filename[i]);
+				fprintf(stderr, "error, unable to open File : %s \n", filename[i + offset]);
 			}
 		}
-		else if (argCmp(filename[i], "-") && control == 0)
+		else if (argCmp(filename[i + offset], "-") && control == 0)
 		{
 			fd[i] = 0;
 			control ++;
@@ -408,11 +392,11 @@ void fileopener(int filenumber, char ** filename, int *fd)
 	
 	for (int i = 0; i < number; i++)
 	{
-		if (fd[i] => 0)
+		if (fd[i] >= 0)
 		{
-			(para + i)->buffer = buffer;
+			(para + i)->Buffer = buffer;
 			(para + i)->fd = fd[i];
-			test = pthread_create((threads+i), NULL, &FractCreate, (void*)(para+i))
+			test = pthread_create((threads+i), NULL, &FractCreate, (void*)(para+i));
 			rendevous++;
 			if (test != 0)
 			{
@@ -436,9 +420,9 @@ void fileopener(int filenumber, char ** filename, int *fd)
  {
 	int rendevous = 0; 
 	int test = 0;
-	for (int i = 0; i < printNumber, i++)
+	for (int i = 0; i < printNumber; i++)
 	{
-		test = pthread_create((threads + i), NULL, &FractCalculus, (void*)editeurImprimeur)
+		test = pthread_create((threads + i), NULL, &FractCalculus, (void*)editeurImprimeur);
 		rendevous++;
 		if (test != 0)
 		{
@@ -523,14 +507,14 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "malloc fail : lachouf");
 		return -1;
 	}
-	lachouf->buffer1 = buffer1;
-	lachouf->buffer2 = buffer2;
+	lachouf->buffer1 = Buffer1;
+	lachouf->buffer2 = Buffer2;
 	
 	
 	//checking the number of arguments, a input file and output file is always needed
 	
 	
-    if (argc => 3)
+    if (argc >= 3)
 	{
 		if (argCmp(argv[1], d) && argCmp(argv[2], maxthreads))     	//case when both options are used
 		{
@@ -544,7 +528,7 @@ int main(int argc, char *argv[])
 			
 			//opening the streams for the files
 			
-			fileopener(readingThreads, argv[4], fd);
+			fileopener(readingThreads, argv, fd, 4);      			// add an offset
 			
 			//creating the threads for reading
 			
@@ -562,7 +546,7 @@ int main(int argc, char *argv[])
 				for (int i = 0; i < readingThreads; i++)
 					close(fd[i]);
 				
-				exit();
+				exit(-1);
 			}
 			
 			//creating the threads for calculating
@@ -583,7 +567,7 @@ int main(int argc, char *argv[])
 					close(fd[i]);
 				
 				fprintf(stderr, "it didn't like that at all");
-				exit();
+				exit(-1);
 			}
 			
 			// creating threads to create each image
@@ -601,6 +585,7 @@ int main(int argc, char *argv[])
 				{
 					if (sem_trywait(&full2) == 0)
 					{
+						int buffpos2;
 						pthread_mutex_lock(&buffycalculus);
 						sem_getvalue(&full2, &buffpos2);
 						fractalis = *(buffer2 + buffpos2 - 1);
@@ -629,7 +614,7 @@ int main(int argc, char *argv[])
 			while (rendezvous3 != 0)
 			{
 				sleep(5);
-				sem_getvalue(&rdv3, &rendevous3);
+				sem_getvalue(&rdv3, &rendezvous3);
 			}
 
 			
@@ -646,7 +631,7 @@ int main(int argc, char *argv[])
 			
 			//opening the streams for the files
 			
-			fileopener(readingThreads, argv[2], fd);
+			fileopener(readingThreads, argv, fd, 2);
 			
 			//creating the threads for reading
 			
@@ -664,7 +649,7 @@ int main(int argc, char *argv[])
 				for (int i = 0; i < readingThreads; i++)
 					close(fd[i]);
 				
-				exit();
+				exit(-1);
 			}
 			
 			//creation of calculating threads
@@ -685,7 +670,7 @@ int main(int argc, char *argv[])
 					close(fd[i]);
 				
 				fprintf(stderr, "it didn't like that at all");
-				exit();
+				exit(-1);
 			}
 			
 			//creation of bitmap creation threads as well as a failsafe in case we are unable to create them
@@ -746,7 +731,7 @@ int main(int argc, char *argv[])
 			
 			//opening the streams for the files
 			
-			fileopener(readingThreads, argv[3], fd);
+			fileopener(readingThreads, argv, fd, 3);
 			
 			//creating the threads for reading
 			
@@ -764,7 +749,7 @@ int main(int argc, char *argv[])
 				for (int i = 0; i < readingThreads; i++)
 					close(fd[i]);
 				
-				exit();
+				exit(-1);
 			}
 			
 			//creation of calculating threads
@@ -785,13 +770,14 @@ int main(int argc, char *argv[])
 					close(fd[i]);
 				
 				fprintf(stderr, "it didn't like that at all");
-				exit();
+				exit(-1);
 			}
 			
 			//comparaison between fractal and freeing of the memory occupied
-			
-			sem_getvalue(&full2, test2);
-			sem_getvalue(&rdv2, test1);
+			int test1 = 0;
+			int test2 = 0;
+			sem_getvalue(&full2, &test2);
+			sem_getvalue(&rdv2, &test1);
 			while(test1 != 0 || test2 != 0)
 			{
 				if (sem_trywait(&full2) == 0)
@@ -799,7 +785,7 @@ int main(int argc, char *argv[])
 					pthread_mutex_lock(&buffycalculus);
 					int buffpos2;
 					sem_getvalue(&full2, &buffpos2);
-					compa = *((para->buffer2) + buffpos2);
+					compa = *(Buffer2 + buffpos2);
 					pthread_mutex_unlock(&buffycalculus);
 					sem_post(&empty2);
 					
@@ -818,13 +804,13 @@ int main(int argc, char *argv[])
 						fractalis = compa;
 					
 				}
-				sem_getvalue(&full2, test2);
-				sem_getvalue(&rdv2, test1);
+				sem_getvalue(&full2, &test2);
+				sem_getvalue(&rdv2, &test1);
 			}
 			
 			//creating the bitmap image
 			
-			if(write_bitmap_sdl((const struct fractal*)fractalis), (const char*)(fractalis->name) == -1)
+			if(write_bitmap_sdl(((const struct fractal*)fractalis), (const char*)(fractalis->name)) == -1)
 				fprintf(stderr, "conversion failure");
 			
 		}
@@ -840,7 +826,7 @@ int main(int argc, char *argv[])
 			
 			//opening the streams for the files
 			
-			fileopener(readingThreads, argv[1], fd);
+			fileopener(readingThreads, argv, fd, 1);
 			
 			//creating the threads for reading
 			
@@ -858,7 +844,7 @@ int main(int argc, char *argv[])
 				for (int i = 0; i < readingThreads; i++)
 					close(fd[i]);
 				
-				exit();
+				exit(-1);
 			}
 			
 			//creation of calculating threads
@@ -879,13 +865,14 @@ int main(int argc, char *argv[])
 					close(fd[i]);
 				
 				fprintf(stderr, "it didn't like that at all");
-				exit();
+				exit(-1);
 			}
 			
 			//comparaison between fractal and freeing of the memory occupied
-			
-			sem_getvalue(&full2, test2);
-			sem_getvalue(&rdv2, test1);
+			int test1 = 0;
+			int test2 = 0;
+			sem_getvalue(&full2, &test2);
+			sem_getvalue(&rdv2, &test1);
 			while(test1 != 0 || test2 != 0)
 			{
 				if (sem_trywait(&full2) == 0)
@@ -893,7 +880,7 @@ int main(int argc, char *argv[])
 					pthread_mutex_lock(&buffycalculus);
 					int buffpos2;
 					sem_getvalue(&full2, &buffpos2);
-					compa = *((para->buffer2) + buffpos2);
+					compa = *(Buffer2 + buffpos2);
 					pthread_mutex_unlock(&buffycalculus);
 					sem_post(&empty2);
 					
@@ -921,7 +908,7 @@ int main(int argc, char *argv[])
 			
 			//Bitmap creation
 			
-			if(write_bitmap_sdl((const struct fractal*)fractalis), (const char*)(fractalis->name) == -1)
+			if(write_bitmap_sdl(((const struct fractal*)fractalis), (const char*)(fractalis->name)) == -1)
 				fprintf(stderr, "conversion failure");
 		}
 	}
@@ -934,7 +921,7 @@ int main(int argc, char *argv[])
 		sem_destroy(&empty2);
 		sem_destroy(&full1);
 		sem_destroy(&full2);
-		printf("there are missing arguments, hey bro mind stopping putting strain on my code ?\n")
+		printf("there are missing arguments, hey bro mind stopping putting strain on my code ?\n");
 		return -1;
 	}
 	

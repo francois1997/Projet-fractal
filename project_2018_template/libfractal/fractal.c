@@ -39,7 +39,7 @@ struct fractal *fractal_new(const char *name, int width, int height, double a, d
 	} */
 	
 	newFract->image = (uint16_t *)malloc(sizeof(uint16_t)*height*width);		//allocate memory for the whole image
-	if (*(newFract->image) == NULL)
+	if ((newFract->image) == NULL)
 	{
 		free(newFract->image);
 		free(newFract->name);
@@ -105,6 +105,23 @@ double fractal_get_a(const struct fractal *f)
 double fractal_get_b(const struct fractal *f)
 {
     return f->b;
+}
+
+
+int argCmp(char *string1, char *string2)
+{
+	int i =0;
+	while (*(string1 + i) != '\0' && *(string2 +i) != '\0')
+	{
+		if (*(string1 + i) != *(string2 + i))
+			return 0;
+		
+		i++;
+	}
+	if(*(string1 + i) == *(string2 + i))
+		return 1;
+	
+	return 0;
 }
 
 
