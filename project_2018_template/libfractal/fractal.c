@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "fractal.h"
 
 struct fractal *fractal_new(const char *name, int width, int height, double a, double b)
@@ -14,7 +15,7 @@ struct fractal *fractal_new(const char *name, int width, int height, double a, d
 		free(newFract);
 		return NULL;
 	}
-	stpcpy(newFract->name, name);
+	strcpy(newFract->name, name);
 	
 	/* newFract->image = (uint16_t **)malloc(sizeof(uint16_t *)*height);		//allocate memory for the table of pointer
 	if(newFract->image == NULL)
@@ -57,8 +58,7 @@ struct fractal *fractal_new(const char *name, int width, int height, double a, d
 
 void fractal_free(struct fractal *f)
 {
-    free(f->name);
-	free(*(f->image));
+    free((f->name));
 	free(f->image);
 	free(f);
 }
@@ -107,28 +107,5 @@ double fractal_get_b(const struct fractal *f)
     return f->b;
 }
 
-size_t strlen(const char *string)
-{
-	if (string == NULL)
-		return -1;
-	
-	int i =0;
-	while (*(string + i) != '\0' && i =< 65)
-		i++;
-	
-	if (i == 66)
-		return -1;
-	
-	return (size_t)i;
-}
 
-void strcpy(char *dest, const char *src)
-{
-	int i =0;
-	while (*(src + i) != '\0')
-	{
-		*(dest + i) = *(src + i);
-		i++;
-	}
-	*(dest + i) = '\0';
-}
+
