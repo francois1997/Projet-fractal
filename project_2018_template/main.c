@@ -46,12 +46,11 @@ struct parametres {
 struct porometres {
 	struct fractal** buffer1;
 	struct fractal** buffer2;
-}
+};
 
 
 
-void *FractCreate (void *param)
-{
+void *FractCreate (void *param){
 	//check that calculating threads have been created before launching anything
 	
 	int test2 = 0;
@@ -235,8 +234,8 @@ void *FractCreate (void *param)
 
 	/*Haute possibilité de deadlock dans fractCalculus FIXED*/
 	
-void *FractCalculus (void *param)
-{
+void *FractCalculus (void *param){
+	
 	struct porometres *para = (struct porometres*)param;
 	struct fractal *fractalis;
 	/* 
@@ -293,8 +292,8 @@ void *FractCalculus (void *param)
 }
 	
 	
-void *BitCreator (void *param)
-{
+void *BitCreator (void *param){
+	
 	struct fractal **buffer = (struct fractal**)param;
 	int buffpos2;
 	struct fractal *fractalis;
@@ -356,8 +355,8 @@ void RthreadCreation(int readingThreads, char *filename[], pthread_t threadlist[
  */
  
  
-void fileopener(int filenumber, char ** filename, int *fd, int offset)
- {
+void fileopener(int filenumber, char ** filename, int *fd, int offset){
+	
 	int control = 0;
 	for (int i = 0; i < filenumber; i++)
 	{
@@ -378,8 +377,8 @@ void fileopener(int filenumber, char ** filename, int *fd, int offset)
 	}
  }
  
- struct parametres *threadcreate(pthread_t *threads, int fd[], struct fractal **buffer, int number)
- {
+ struct parametres *threadcreate(pthread_t *threads, int fd[], struct fractal **buffer, int number){
+	 
 	int rendevous = 0;
 	int test = 0;
 	struct parametres *para = (struct parametres *)malloc(sizeof(struct parametres)*number);
@@ -416,8 +415,8 @@ void fileopener(int filenumber, char ** filename, int *fd, int offset)
  
  
  
- int calculusPublisher(int printNumber, struct porometres *editeurImprimeur, pthread_t *threads)
- {
+ int calculusPublisher(int printNumber, struct porometres *editeurImprimeur, pthread_t *threads){
+	 
 	int rendevous = 0; 
 	int test = 0;
 	for (int i = 0; i < printNumber; i++)
@@ -439,8 +438,8 @@ void fileopener(int filenumber, char ** filename, int *fd, int offset)
  
  
  
- int bitThreadsCreate(int ThreadNumber, struct fractal **buffer, pthread_t *threads)
- {
+ int bitThreadsCreate(int ThreadNumber, struct fractal **buffer, pthread_t *threads){
+	 
 	int rendevous = 0;
 	int test = 0;
 	for (int i =0; i < ThreadNumber; i++)
@@ -459,8 +458,8 @@ void fileopener(int filenumber, char ** filename, int *fd, int offset)
  }
  
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]){
+	
 	// initialisation of all the variables needed
 	
 	const char *d = "-d";
@@ -535,8 +534,8 @@ int main(int argc, char *argv[])
 			para = threadcreate(readerThreads, fd, Buffer1, readingThreads);
 			if (para == NULL)
 			{
-				free(buffer1);
-				free(buffer2);
+				free(Buffer1);
+				free(Buffer2);
 				free(lachouf);
 				sem_destroy(&empty1);
 				sem_destroy(&empty2);
@@ -554,8 +553,8 @@ int main(int argc, char *argv[])
 			int deadlockDect = calculusPublisher((int)argv[3], lachouf, calculusThreads);
 			if (deadlockDect == 0)
 			{
-				free(buffer1);
-				free(buffer2);
+				free(Buffer1);
+				free(Buffer2);
 				free(lachouf);
 				sem_destroy(&empty1);
 				sem_destroy(&empty2);
@@ -572,7 +571,7 @@ int main(int argc, char *argv[])
 			
 			// creating threads to create each image
 			
-			int bitThreads = bitThreadsCreate((int)argv[3], buffer2, BitThreads);
+			int bitThreads = bitThreadsCreate((int)argv[3], Buffer2, BitThreads);
 			if (bitThreads == 0)
 			{
 				fprintf(stderr, "welp it's gonna be slow");
@@ -588,8 +587,8 @@ int main(int argc, char *argv[])
 						int buffpos2;
 						pthread_mutex_lock(&buffycalculus);
 						sem_getvalue(&full2, &buffpos2);
-						fractalis = *(buffer2 + buffpos2 - 1);
-						*(buffer2 + buffpos2 - 1) == NULL;
+						fractalis = *(Buffer2 + buffpos2 - 1);
+						*(Buffer2 + buffpos2 - 1) == NULL;
 						pthread_mutex_unlock(&buffycalculus);
 						sem_post(&empty2);
 						
@@ -638,8 +637,8 @@ int main(int argc, char *argv[])
 			para = threadcreate(readerThreads, fd, Buffer1, readingThreads);
 			if (para == NULL)
 			{
-				free(buffer1);
-				free(buffer2);
+				free(Buffer1);
+				free(Buffer2);
 				free(lachouf);
 				sem_destroy(&empty1);
 				sem_destroy(&empty2);
@@ -657,8 +656,8 @@ int main(int argc, char *argv[])
 			int deadlockDect = calculusPublisher(argc*4, lachouf, calculusThreads);
 			if (deadlockDect == 0)
 			{
-				free(buffer1);
-				free(buffer2);
+				free(Buffer1);
+				free(Buffer2);
 				free(lachouf);
 				sem_destroy(&empty1);
 				sem_destroy(&empty2);
@@ -675,7 +674,7 @@ int main(int argc, char *argv[])
 			
 			//creation of bitmap creation threads as well as a failsafe in case we are unable to create them
 			
-			int bitThreads = bitThreadsCreate(argc*3, buffer2, BitThreads);
+			int bitThreads = bitThreadsCreate(argc*3, Buffer2, BitThreads);
 			if (bitThreads == 0)
 			{
 				fprintf(stderr, "welp it's gonna be slow");
@@ -688,10 +687,11 @@ int main(int argc, char *argv[])
 				{
 					if (sem_trywait(&full2) == 0)
 					{
+						int buffpos2 = 0;
 						pthread_mutex_lock(&buffycalculus);
 						sem_getvalue(&full2, &buffpos2);
-						fractalis = *(buffer2 + buffpos2 - 1);
-						*(buffer2 + buffpos2 - 1) == NULL;
+						fractalis = *(Buffer2 + buffpos2 - 1);
+						*(Buffer2 + buffpos2 - 1) == NULL;
 						pthread_mutex_unlock(&buffycalculus);
 						sem_post(&empty2);
 						
@@ -716,7 +716,7 @@ int main(int argc, char *argv[])
 			while (rendezvous3 != 0)
 			{
 				sleep(5);
-				sem_getvalue(&rdv3, &rendevous3);
+				sem_getvalue(&rdv3, &rendezvous3);
 			}
 			
 		}
@@ -738,8 +738,8 @@ int main(int argc, char *argv[])
 			para = threadcreate(readerThreads, fd, Buffer1, readingThreads);
 			if (para == NULL)
 			{
-				free(buffer1);
-				free(buffer2);
+				free(Buffer1);
+				free(Buffer2);
 				free(lachouf);
 				sem_destroy(&empty1);
 				sem_destroy(&empty2);
@@ -757,8 +757,8 @@ int main(int argc, char *argv[])
 			int deadlockDect = calculusPublisher((int)argv[3], lachouf, calculusThreads);
 			if (deadlockDect == 0)
 			{
-				free(buffer1);
-				free(buffer2);
+				free(Buffer1);
+				free(Buffer2);
 				free(lachouf);
 				sem_destroy(&empty1);
 				sem_destroy(&empty2);
@@ -833,8 +833,8 @@ int main(int argc, char *argv[])
 			para = threadcreate(readerThreads, fd, Buffer1, readingThreads);
 			if (para == NULL)
 			{
-				free(buffer1);
-				free(buffer2);
+				free(Buffer1);
+				free(Buffer2);
 				free(lachouf);
 				sem_destroy(&empty1);
 				sem_destroy(&empty2);
@@ -852,8 +852,8 @@ int main(int argc, char *argv[])
 			int deadlockDect = calculusPublisher(argc*4, lachouf, calculusThreads);
 			if (deadlockDect == 0)
 			{
-				free(buffer1);
-				free(buffer2);
+				free(Buffer1);
+				free(Buffer2);
 				free(lachouf);
 				sem_destroy(&empty1);
 				sem_destroy(&empty2);
