@@ -52,6 +52,7 @@ struct porometres {
 
 void *FractCreate (void *param){
 	//check that calculating threads have been created before launching anything
+	// *CRITICAL* change the reading with the mmap function and fstat
 	
 	int test2 = 0;
 	int test3 = -1;
@@ -126,7 +127,7 @@ void *FractCreate (void *param){
 			
 			//it checks wether it is a comment or an empty line
 			
-			if ((ispace != '#' && i == 0) || (i == 0 && ispace == ' '))
+			if ((ispace == '#' && i == 0) || (i == 0 && ispace == ' '))
 			{
 				i == 100;
 			}
@@ -207,9 +208,9 @@ void *FractCreate (void *param){
 			if (fracty != NULL)
 			{
 				int tardy;
-				sem_getvalue(&full1, &tardy);
 				sem_wait(&empty1);
 				pthread_mutex_lock(&buffycreate);
+				sem_getvalue(&full1, &tardy);
 				*((para->Buffer) + tardy) = fracty;
 				fracty = NULL;
 				pthread_mutex_unlock(&buffycreate);
@@ -327,6 +328,7 @@ void *BitCreator (void *param){
 	}
 	
 	sem_wait(&rdv3);
+	pthread_exit(NULL);
 }
 	
 
