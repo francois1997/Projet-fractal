@@ -114,6 +114,7 @@ void *FractCreate (void *param){
 			{
 				close(para->fd);
 				free(name);
+				name = NULL;
 				fprintf(stderr, "Error while reading\n");
 				sem_wait(&rdv1);
 				pthread_exit(NULL);
@@ -122,6 +123,7 @@ void *FractCreate (void *param){
 			{
 				close(para->fd);
 				free(name);
+				name = NULL;
 				printf("Process finished\n");
 				sem_wait(&rdv1);
 				pthread_exit(NULL);
@@ -162,6 +164,7 @@ void *FractCreate (void *param){
 			{
 				close(para->fd);
 				free(name);
+				name = NULL;
 				fprintf(stderr, "Error while reading\n");
 				sem_wait(&rdv1);
 				pthread_exit(NULL);
@@ -171,6 +174,7 @@ void *FractCreate (void *param){
 			{
 				close(para->fd);
 				free(name);
+				name = NULL;
 				fprintf(stderr, "Error while reading\n");
 				sem_wait(&rdv1);
 				pthread_exit(NULL);
@@ -180,6 +184,7 @@ void *FractCreate (void *param){
 			{
 				close(para->fd);
 				free(name);
+				name = NULL;
 				fprintf(stderr, "Error while reading\n");
 				sem_wait(&rdv1);
 				pthread_exit(NULL);
@@ -189,6 +194,7 @@ void *FractCreate (void *param){
 			{
 				close(para->fd);
 				free(name);
+				name = NULL;
 				fprintf(stderr, "Error while reading\n");
 				sem_wait(&rdv1);
 				pthread_exit(NULL);
@@ -227,6 +233,7 @@ void *FractCreate (void *param){
 
 
 	free(name);
+	name = NULL;
 	close(fd);
 	sem_wait(&rdv1);
 	pthread_exit(NULL);
@@ -234,14 +241,13 @@ void *FractCreate (void *param){
 
 
 
-	/*Haute possibilité de deadlock dans fractCalculus FIXED*/
 
 void *FractCalculus (void *param){
 
 	struct porometres *para = (struct porometres*)param;
 	struct fractal *fractalis;
 	/*
-	 * A critical error is occuring sem_getvalue migth not be the last element
+	 * A critical error is occuring sem_getvalue migth not be the last element FIXED
 	 * A mutex is nescessary to avoid the semfull to change
 	 * the solution chosen is global variable
 	*/
@@ -493,6 +499,7 @@ int main(int argc, char *argv[]){
 	if (Buffer2 == NULL)
 	{
 		free(Buffer1);
+		Buffer1 = NULL;
 		sem_destroy(&empty1);
 		sem_destroy(&empty2);
 		sem_destroy(&full1);
@@ -504,7 +511,9 @@ int main(int argc, char *argv[]){
 	if (lachouf == NULL)
 	{
 		free(Buffer1);
+		Buffer1 = NULL;
 		free(Buffer2);
+		Buffer2 = NULL;
 		sem_destroy(&empty1);
 		sem_destroy(&empty2);
 		sem_destroy(&full1);
@@ -541,8 +550,11 @@ int main(int argc, char *argv[]){
 			if (para == NULL)
 			{
 				free(Buffer1);
+				Buffer1 = NULL;
 				free(Buffer2);
+				Buffer2 = NULL;
 				free(lachouf);
+				lachouf = NULL;
 				sem_destroy(&empty1);
 				sem_destroy(&empty2);
 				sem_destroy(&full1);
@@ -560,8 +572,11 @@ int main(int argc, char *argv[]){
 			if (deadlockDect == 0)
 			{
 				free(Buffer1);
+				Buffer1 = NULL;
 				free(Buffer2);
+				Buffer2 = NULL;
 				free(lachouf);
+				lachouf = NULL;
 				sem_destroy(&empty1);
 				sem_destroy(&empty2);
 				sem_destroy(&full1);
@@ -643,8 +658,11 @@ int main(int argc, char *argv[]){
 			if (para == NULL)
 			{
 				free(Buffer1);
+				Buffer1 = NULL;
 				free(Buffer2);
+				Buffer2 = NULL;
 				free(lachouf);
+				lachouf = NULL;
 				sem_destroy(&empty1);
 				sem_destroy(&empty2);
 				sem_destroy(&full1);
@@ -662,8 +680,11 @@ int main(int argc, char *argv[]){
 			if (deadlockDect == 0)
 			{
 				free(Buffer1);
+				Buffer1 = NULL;
 				free(Buffer2);
+				Buffer2 = NULL;
 				free(lachouf);
+				lachouf = NULL;
 				sem_destroy(&empty1);
 				sem_destroy(&empty2);
 				sem_destroy(&full1);
@@ -743,8 +764,11 @@ int main(int argc, char *argv[]){
 			if (para == NULL)
 			{
 				free(Buffer1);
+				Buffer1 = NULL;
 				free(Buffer2);
+				Buffer2 = NULL;
 				free(lachouf);
+				lachouf = NULL;
 				sem_destroy(&empty1);
 				sem_destroy(&empty2);
 				sem_destroy(&full1);
@@ -762,8 +786,11 @@ int main(int argc, char *argv[]){
 			if (deadlockDect == 0)
 			{
 				free(Buffer1);
+				Buffer1 = NULL;
 				free(Buffer2);
+				Buffer2 = NULL;
 				free(lachouf);
+				lachouf = NULL;
 				sem_destroy(&empty1);
 				sem_destroy(&empty2);
 				sem_destroy(&full1);
@@ -798,10 +825,14 @@ int main(int argc, char *argv[]){
 						if (compa->moyenne > fractalis->moyenne)
 						{
 							fractal_free(fractalis);
+							fractalis = NULL;
 							fractalis = compa;
 						}
 						else
+						{
 							fractal_free(compa);
+							compa = NULL;
+						}
 
 					}
 					else
@@ -839,8 +870,11 @@ int main(int argc, char *argv[]){
 			{
 				printf("para is NULL\n");
 				free(Buffer1);
+				Buffer1 = NULL;
 				free(Buffer2);
+				Buffer2 = NULL;
 				free(lachouf);
+				lachouf = NULL;
 				sem_destroy(&empty1);
 				sem_destroy(&empty2);
 				sem_destroy(&full1);
@@ -858,8 +892,11 @@ int main(int argc, char *argv[]){
 			if (deadlockDect == 0)
 			{
 				free(Buffer1);
+				Buffer1 = NULL;
 				free(Buffer2);
+				Buffer2 = NULL;
 				free(lachouf);
+				lachouf = NULL;
 				sem_destroy(&empty1);
 				sem_destroy(&empty2);
 				sem_destroy(&full1);
@@ -894,6 +931,7 @@ int main(int argc, char *argv[]){
 						if (compa->moyenne > fractalis->moyenne)
 						{
 							fractal_free(fractalis);
+							fractalis = NULL;
 							fractalis = compa;
 						}
 						else
@@ -920,8 +958,11 @@ int main(int argc, char *argv[]){
 	else
 	{
 		free(Buffer1);
+		Buffer1 = NULL;
 		free(Buffer2);
+		Buffer2 = NULL;
 		free(lachouf);
+		lachouf = NULL;
 		sem_destroy(&empty1);
 		sem_destroy(&empty2);
 		sem_destroy(&full1);
