@@ -256,7 +256,7 @@ void *FractCalculus (void *param){
 
 			pthread_mutex_lock(&buffycreate);
 			fractalis = *((para->buffer1) + fully1 - 1);
-			*((para->buffer1) + buffpos1 - 1) = NULL;
+			*((para->buffer1) + fully1 - 1) = NULL;
 			fully1--;
 			pthread_mutex_unlock(&buffycreate);
 			sem_post(&empty1);
@@ -307,7 +307,7 @@ void *BitCreator (void *param){
 		{
 			pthread_mutex_lock(&buffycalculus);
 			fractalis = *(buffer + fully2 - 1);
-			*(buffer + buffpos2 - 1) == NULL;
+			*(buffer + fully2 - 1) == NULL;
 			fully2--;
 			pthread_mutex_unlock(&buffycalculus);
 			sem_post(&empty2);
@@ -592,7 +592,7 @@ int main(int argc, char *argv[]){
 					{
 						pthread_mutex_lock(&buffycalculus);
 						fractalis = *(Buffer2 + fully2 - 1);
-						*(Buffer2 + buffpos2 - 1) == NULL;
+						*(Buffer2 + fully2 - 1) == NULL;
 						fully2--;
 						pthread_mutex_unlock(&buffycalculus);
 						sem_post(&empty2);
@@ -694,7 +694,7 @@ int main(int argc, char *argv[]){
 					{
 						pthread_mutex_lock(&buffycalculus);
 						fractalis = *(Buffer2 + fully2 - 1);
-						*(Buffer2 + buffpos2 - 1) == NULL;
+						*(Buffer2 + fully2 - 1) == NULL;
 						fully2--;
 						pthread_mutex_unlock(&buffycalculus);
 						sem_post(&empty2);
