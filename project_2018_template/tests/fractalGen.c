@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 	}
 	for (int j = 0;j < argc-2; j++)
 	{
-		for (int i = 0; i < (int)argv[1];i++)
+		for (int i = 0; i < 50;i++)
 		{
 			if (fd[j] > 0)
 			{
