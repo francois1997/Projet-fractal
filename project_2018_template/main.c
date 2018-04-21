@@ -312,7 +312,7 @@ void *BitCreator (void *param){
 
 	while (test1 != 0 || test2 != 0)
 	{
-		if (sem_trywait(&full2))
+		if (sem_trywait(&full2) == 0)
 		{
 			pthread_mutex_lock(&buffycalculus);
 			fractalis = *(buffer + fully2 - 1);
