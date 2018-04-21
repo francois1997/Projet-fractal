@@ -226,7 +226,7 @@ void *FractCreate (void *param){
 				fracty = NULL;
 				pthread_mutex_unlock(&buffycreate);
 				sem_post(&full1);
-				printf("Fractal %s succesfully inserted", name);
+				printf("Fractal %s succesfully inserted\n", name);
 				//producer comsumer problem
 			}
 

@@ -7,14 +7,16 @@ struct fractal *fractal_new(const char *name, int width, int height, double a, d
 {
     struct fractal *newFract = (struct fractal*)malloc(sizeof(struct fractal)); //allocate memory for fractal structure
 	if (newFract == NULL)
-		fprintf(stderr, "Fractal malloc error");
+	{
+		fprintf(stderr, "Fractal malloc error\n");
 		return NULL;
+	}
 	
 	newFract->name = (char *)malloc(strlen(name)+1);							//allocate memory for fractal name
 	if (newFract->name == NULL)
 	{
 		free(newFract);
-		fprintf(stderr, "name Fractal malloc error");
+		fprintf(stderr, "name Fractal malloc error\n");
 		return NULL;
 	}
 	strcpy(newFract->name, name);
@@ -46,7 +48,7 @@ struct fractal *fractal_new(const char *name, int width, int height, double a, d
 		free(newFract->image);
 		free(newFract->name);
 		free(newFract);
-		fprintf(stderr, "image Fractal malloc error");
+		fprintf(stderr, "image Fractal malloc error\n");
 		return NULL;
 	}
 	
@@ -84,7 +86,7 @@ void fractal_set_value(struct fractal *f, int x, int y, int val)
 {
     if(x > f->width || y > f->height)
 	{
-		printf("SEG_fault : set_value");
+		printf("SEG_fault : set_value\n");
 		exit(-1);
 	}
 	*((f->image) + x + (f->width)*y) = val;
