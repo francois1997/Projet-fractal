@@ -1,14 +1,15 @@
 #ifndef _FRACTAL_H
 #define _FRACTAL_H
+#include<stdint.h>
 
 struct fractal {
-    char *name;
+  char *name;
 	unsigned long width;
 	unsigned long height;
 	double a;
 	double b;
 	uint16_t *image;
-	};
+};
 
 /*
  * fractal_new: alloue une nouvelle structure fractal
@@ -20,7 +21,7 @@ struct fractal {
  * @b: partie imaginaire des coordonnées de la fractale
  * @return: un pointeur vers une struct fractal, ou NULL si erreur
  */
-struct fractal *fractal_new(const char *name, int width, int height, double a, double b);
+struct fractal * fractal_new(const char *name, int width, int height, double a, double b);
 
 /*
  * fractal_free: libère la mémoire utilisée par une struct fractal
@@ -67,7 +68,7 @@ int fractal_get_width(const struct fractal *f);
 
 /*
  * fractal_get_height: retourne la hauteur de l'image de la fractale
- * 
+ *
  * @f: fractale
  * @return: hauteur
  */
@@ -75,7 +76,7 @@ int fractal_get_height(const struct fractal *f);
 
 /*
  * fractal_get_a: retourne la partie réelle des coordonnées de la fractale
- * 
+ *
  * @f: fractale
  * @return: partie réelle
  */
@@ -88,6 +89,10 @@ double fractal_get_a(const struct fractal *f);
  * @return: partie imaginaire
  */
 double fractal_get_b(const struct fractal *f);
+
+
+size_t strlen(const char *string);
+//void strcpy(char *dest, const char *src);
 
 /*
  * fractal_compute_value
@@ -113,27 +118,5 @@ int fractal_compute_value(struct fractal *f, int x, int y);
  * @return: 0 si pas d'erreurs, -1 sinon
  */
 int write_bitmap_sdl(const struct fractal *f, const char *fname);
-
-/*
- * strlen
- *
- * compte le nombre de characters dans un tableau de characters
- *
- * @string : tableau de characters
- * @return : taille du tableau si pas d'erreurs, -1 sinon
-*/
-size_t strlen(const char *string);
-
-/*
- * stpcpy
- *
- * copy un tableau de characters vers une adresse mémoire donnée
- *
- * @dest : destination ou le tableau sera copié, doit avoir la bonne taille
- * @src : tableau de characters à copié
- *
- * @return : ne retourne rien
-*/
-void strcpy(char *dest, const char *src)
 
 #endif
