@@ -44,10 +44,11 @@ int main(int argc, char *argv[])
 		{
 			if (fd[j] > 0)
 			{
-				double a = (rand() % 10)/10;
+				double a = -(rand() % 10)/10;
 				double b = (rand() % 10)/10;
-				itoa(i, name, 10);
+				snprintf( name, snprintf( NULL, 0, "%d", i) + 1, "%d", i);
 				int size = (int)((i/10)+1)
+				printf("name :%s a :%e b :%e", name, a, b);
 				write(fd[j], (void*)name, size);
 				write(fd[j], (void*)&sp, 1);
 				write(fd[j], (void*)&width, sizeof(int));
