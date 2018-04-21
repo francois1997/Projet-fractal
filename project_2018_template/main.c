@@ -976,8 +976,10 @@ int main(int argc, char *argv[]){
 
 
 
-
-	fractal_free(fractalis);
+	if (fractalis != NULL)
+	{
+		fractal_free(fractalis);
+	}
 	free(lachouf);
 	free(Buffer2);
 	free(Buffer1);
