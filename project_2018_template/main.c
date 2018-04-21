@@ -115,7 +115,7 @@ void *FractCreate (void *param){
 				close(para->fd);
 				free(name);
 				name = NULL;
-				fprintf(stderr, "Error while reading\n");
+				fprintf(stderr, "Error while reading phase 1\n");
 				sem_wait(&rdv1);
 				pthread_exit(NULL);
 			}
@@ -165,7 +165,7 @@ void *FractCreate (void *param){
 				close(para->fd);
 				free(name);
 				name = NULL;
-				fprintf(stderr, "Error while reading\n");
+				fprintf(stderr, "Error while reading phase 2\n");
 				sem_wait(&rdv1);
 				pthread_exit(NULL);
 			}
@@ -175,7 +175,7 @@ void *FractCreate (void *param){
 				close(para->fd);
 				free(name);
 				name = NULL;
-				fprintf(stderr, "Error while reading\n");
+				fprintf(stderr, "Error while reading phase 3\n");
 				sem_wait(&rdv1);
 				pthread_exit(NULL);
 			}
@@ -185,7 +185,7 @@ void *FractCreate (void *param){
 				close(para->fd);
 				free(name);
 				name = NULL;
-				fprintf(stderr, "Error while reading\n");
+				fprintf(stderr, "Error while reading phase 4\n");
 				sem_wait(&rdv1);
 				pthread_exit(NULL);
 			}
@@ -195,7 +195,7 @@ void *FractCreate (void *param){
 				close(para->fd);
 				free(name);
 				name = NULL;
-				fprintf(stderr, "Error while reading\n");
+				fprintf(stderr, "Error while reading phase 5\n");
 				sem_wait(&rdv1);
 				pthread_exit(NULL);
 			}
@@ -213,7 +213,11 @@ void *FractCreate (void *param){
 		{
 			//i need to make a linked list with the name of the fractal, and be able to compare to avoid multiple
 			struct fractal *fracty = fractal_new(name, width, height,  a,  b);
-			if (fracty != NULL)
+			if (fracty == NULL)
+			{
+				fprintf(stderr, "Malloc Error on fractal : %s\n", name);
+			}
+			else if (fracty != NULL)
 			{
 				sem_wait(&empty1);
 				pthread_mutex_lock(&buffycreate);
@@ -222,10 +226,9 @@ void *FractCreate (void *param){
 				fracty = NULL;
 				pthread_mutex_unlock(&buffycreate);
 				sem_post(&full1);
+				printf("Fractal %s succesfully inserted", name);
 				//producer comsumer problem
 			}
-			else if (fracty == NULL)
-				fprintf(stderr, "Malloc Error on fractal : %s\n", name);
 
 		}
 	}
@@ -417,7 +420,7 @@ void fileopener(int filenumber, char ** filename, int *fd, int offset){
 	{
 		fprintf(stderr, "No reading threads created\n");
 		return NULL;
-  }
+    }
 
 	printf("%d reading(s) Thread(s) created\n", rendevous);
 	return para;
