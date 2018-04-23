@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
-//#include "libfractal/fractal.h"
+#include "libfractal/fractal.h"
 #include "libfractal/main.h"
 #include <pthread.h>
 #include <errno.h>
@@ -11,175 +11,36 @@
 #include <limits.h>
 #include<stdint.h>
 
+//#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h>
+#include <SDL/SDL.h>
+
+#define MAX_ITER 4096
+#define itoc(x) ((0x00ffffff/MAX_ITER)*(x))
+
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+#define RMASK 0xff000000
+#define GMASK 0x00ff0000
+#define BMASK 0x0000ff00
+#define AMASK 0x000000ff
+#else
+#define RMASK 0x000000ff
+#define GMASK 0x0000ff00
+#define BMASK 0x00ff0000
+#define AMASK 0xff000000
+#endif
+
+
+
 void printallname(struct nameacceslist *list);
-
-
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////
-struct fractal {
-  char *name;
-	unsigned long width;
-	unsigned long height;
-	double a;
-	double b;
-	uint16_t *image;
-};
-
-
-struct fractal * fractal_new(const char *name, int width, int height, double a, double b);
-void fractal_free(struct fractal *f);
-const char *fractal_get_name(const struct fractal *f);
-int fractal_get_value(const struct fractal *f, int x, int y);
-void fractal_set_value(struct fractal *f, int x, int y, int val);
-int fractal_get_width(const struct fractal *f);
-int fractal_get_height(const struct fractal *f);
-double fractal_get_a(const struct fractal *f);
-double fractal_get_b(const struct fractal *f);
-size_t strlen(const char *string);
-int fractal_compute_value(struct fractal *f, int x, int y);
-int write_bitmap_sdl(const struct fractal *f, const char *fname);
-void strcpy(char *dest, const char *src);
-
-
-struct fractal *fractal_new(const char *name, int width, int height, double a, double b)
-{
-  struct fractal *newFract = (struct fractal*)malloc(sizeof(struct fractal)); //allocate memory for fractal structure
-	if (newFract == NULL)
-		return NULL;
-
-	newFract->name = (char *)malloc(strlen(name)+1);							//allocate memory for fractal name
-	if (newFract->name == NULL)
-	{
-		free(newFract);
-		return NULL;
-	}
-	strcpy(newFract->name, name);
-
-	newFract->image = (uint16_t *)malloc(sizeof(uint16_t)*height*width);		//allocate memory for the whole image
-	if ((newFract->image) == NULL)
-	{
-		free(newFract->image);
-		free(newFract->name);
-		free(newFract);
-		return NULL;
-	}
-
-
-	newFract->width = width;
-	newFract->height = height;
-	newFract->a = a;
-	newFract->b = b;
-
-    return newFract;
-}
-
-void fractal_free(struct fractal *f)
-{
-  free(f->name);
-	free(f->image);
-	free(f);
-}
-
-const char *fractal_get_name(const struct fractal *f)
-{
-    return (const char *)(f->name);
-}
-
-int fractal_get_value(const struct fractal *f, int x, int y)
-{
-    if(x > f->width || y > f->height)
-		return -1;
-
-
-    return *((f->image) + x + (f->width)*y);
-}
-
-void fractal_set_value(struct fractal *f, int x, int y, int val)
-{
-    if(x > f->width || y > f->height)
-	{
-		printf("SEG_fault : set_value");
-		exit(-1);
-	}
-	*((f->image) + x + (f->width)*y) = val;
-}
-
-int fractal_get_width(const struct fractal *f)
-{
-    return f->width;
-}
-
-int fractal_get_height(const struct fractal *f)
-{
-    return f->height;
-}
-
-double fractal_get_a(const struct fractal *f)
-{
-    return f->a;
-}
-
-double fractal_get_b(const struct fractal *f)
-{
-    return f->b;
-}
-
-size_t strlen(const char *string)
-{
-	if (string == NULL)
-		return -1;
-
-	int i =0;
-	while (*(string + i) != '\0' && (i <= 65))
-		i++;
-
-	if (i == 66)
-		return -1;
-
-	return (size_t)i;
-}
-
-void strcpy(char *dest, const char *src)
-{
-	int i =0;
-	while (*(src + i) != '\0')
-	{
-		*(dest + i) = *(src + i);
-		i++;
-	}
-	*(dest + i) = '\0';
-}
-/////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////
-
-
 
 
 int max_thread;
 struct buff *buffer;
 struct buff *listfractal;
 struct nameacceslist *accesname;
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 int main(int argc, char *argv[])
 {
@@ -206,6 +67,12 @@ int main(int argc, char *argv[])
                 printf("error during read file");
                 return -1;
             }
+            err = thread_all();
+            if(err == -1)
+            {
+                printf("error during thread calculating");
+                return -1;
+            }
             return 0;
         }
         else
@@ -215,6 +82,12 @@ int main(int argc, char *argv[])
             if(err == -1)
             {
                 printf("error during read file");
+                return -1;
+            }
+            err = thread_all();
+            if(err == -1)
+            {
+                printf("error during thread calculating");
                 return -1;
             }
             return 0;
@@ -237,6 +110,12 @@ int main(int argc, char *argv[])
                 printf("error during read file");
                 return -1;
             }
+            err = thread_moyenne();
+            if(err == -1)
+            {
+                printf("error during thread calculating");
+                return -1;
+            }
             return 0;
         }
         else
@@ -248,11 +127,36 @@ int main(int argc, char *argv[])
                 printf("error during read file");
                 return -1;
             }
+            err = thread_moyenne();
+            if(err == -1)
+            {
+                printf("error during thread calculating");
+                return -1;
+            }
            return 0;
         }
     }
     return -1;
 }
+
+//int executefunction()
+//{
+//  pthread_t lecture;
+//  pthread_t producteur;
+//  err=pthread_create(&lecture,NULL,(void *)&producermoyenne,NULL);
+//if(err!=0)
+//  {
+//    printf("pthread_create fail");
+//    return -1;
+//}
+//err=pthread_create(&producteur,NULL,(void *)&producermoyenne,NULL);
+//if(err!=0)
+//{
+//    printf("pthread_create fail");
+//    return -1;
+//}
+//}
+
 
 
 
@@ -628,52 +532,35 @@ void freelistname(struct nameacceslist *list)
 
 
 
-
-int strcmp(char* first, char* second)
-{
-  int i = 0;
-  if(strlen(first) != strlen(second))
-  {
-    return -1;
-  }
-  while(i<=65 && i<strlen(first))
-  {
-     if(*(first+i) != *(second+i))
-     {
-       return -1;
-     }
-     i++;
-  }
-  return 0;
-}
 /*
  * @pre buffer!=NULL, n>0
  * @post a construit un buffer partagé contenant n slots
  * MALLOC : buf, (empty, full)->semaphore
  */
-int buf_init(struct buff *buffer, int n)
+int buf_init(struct buff *buf, int n)
 {
+    printf("INIT ...");
     int err;
-    buffer->buf = (struct fractal **)malloc(sizeof(struct fractal*)*n);
-    if((buffer->buf)==NULL)
+    buf->buf = (struct fractal **)malloc(sizeof(struct fractal*)*n);
+    if((buf->buf)==NULL)
     {
        return -1;
     }
-    buffer->length = n;                       /* Buffer content les entiers */
-    buffer->begin = buffer->end = 0;        /* Buffer vide si front == rear */
-    err = sem_init(&(buffer->empty), 0, n);      /* Au debut, n slots vides */
+    buf->length = n;                       /* Buffer content les entiers */
+    buf->begin = buf->end = 0;        /* Buffer vide si front == rear */
+    err = sem_init(&(buf->empty), 0, n);      /* Au debut, n slots vides */
     if(err !=0)
     {
       printf("error during semaphore creation");
-      free(buffer->buf);
+      free(buf->buf);
       return -1;
     }
-    err = sem_init(&(buffer->full), 0, 0);      /* Au debut, rien a consommer */
+    err = sem_init(&(buf->full), 0, 0);      /* Au debut, rien a consommer */
     if(err !=0)
     {
       printf("error during semaphore creation");
-      free(buffer->buf);
-      sem_destroy(&(buffer->empty));
+      free(buf->buf);
+      sem_destroy(&(buf->empty));
       return -1;
     }
 }
@@ -718,4 +605,243 @@ struct fractal* buf_remove(struct buff *buffer)
     pthread_mutex_unlock(&buffer->mutex);
     sem_post(&(buffer->empty));
     return retour;
+}
+
+
+//MALLOC : buffer, buff_init
+int thread_moyenne()
+{
+    int err;
+    buffer = (struct buff*)malloc(sizeof(struct buff));
+    if(buffer == NULL)
+    {
+      return -1;
+    }
+    if(max_thread==-1)
+    {
+      max_thread = 1;
+    }
+    printf("nombre thread max = %d \n",max_thread);
+    printf("Creation buffer \n");
+    err = buf_init(buffer, max_thread);
+    if(err != 0)
+    {
+        printf("Error during buffer creation");
+        free(buffer);
+        return -1;
+    }
+    printf("Buffer made");
+    pthread_t producteur[max_thread];
+    pthread_t consommateur[max_thread];
+    for(int i=0;i<max_thread;i++) {
+        err=pthread_create(&(producteur[i]),NULL,(void *)&producermoyenne,NULL);
+        if(err!=0)
+        {
+            printf("pthread_create fail");
+            buf_clean(buffer);
+        }
+    }
+
+    int max = INT_MIN;
+    struct fractal *big = NULL;
+    for(int i=0; i<max_thread; i++)
+    {
+        void **ret;
+        printf("Thread Producteur récupèré");
+        err = pthread_join(producteur[i], ret);
+        if(err!=0)
+        {
+            printf("pthread end with error$");
+            //Faire quelque chose !!
+        }
+        printf("Thread Producteur récupèré");
+        if((struct fractalHigh *)(*ret) == NULL)
+        {
+          printf("No fractal return \n");
+          return -1;
+        }
+        struct  fractalHigh *high = (struct fractalHigh *)(*ret);
+        if(high == NULL)
+        {
+            printf("Error during reception producteurmoyenne");
+            buf_clean(buffer);
+            return -1;
+        }
+        if((high->average)>max)
+        {
+            max = high->average;
+            if(big != NULL)
+            {
+              fractal_free(big);
+            }
+            big = high->high;
+            free(high);
+        }
+        else
+        {
+          fractal_free(high->high);
+          free(high);
+        }
+    }
+    write_bitmap_sdl(big, fractal_get_name(big));
+    fractal_free(big);
+    buf_clean(buffer);
+    return 0;
+}
+
+
+//MALLOC : buffer, buff_init
+int thread_all()
+{
+    buffer = (struct buff*)malloc(sizeof(struct buff));
+    if(buffer == NULL)
+    {
+      return -1;
+    }
+    if(max_thread == -1)
+    {
+      max_thread = 3;
+    }
+    int err = buf_init(buffer, max_thread);
+    if(err != 0)
+    {
+        printf("Error during buffer creation");
+        free(buffer);
+        return 1;
+    }
+    pthread_t producteur[max_thread];
+    pthread_t consommateur[max_thread];
+
+
+    for(int i=0;i<max_thread;i++) {
+        err=pthread_create(&(producteur[i]),NULL,(void *)&producer,NULL);
+        if(err!=0)
+            printf("pthread_create fail");
+    }
+    for(int i=0;i<max_thread;i++) {
+        err=pthread_create(&(consommateur[i]),NULL,(void *)&consumer,NULL);
+        if(err!=0)
+            printf("pthread_create");
+    }
+    for(int i =0; i<max_thread; i++)
+    {
+        err = pthread_join(producteur[i], NULL);
+        if(err!=0)
+        {
+            printf("pthread end with error");
+        }
+    }
+    for(int i =0; i<max_thread; i++)
+    {
+        err = pthread_join(consommateur[i], NULL);
+        if(err!=0)
+        {
+            printf("pthread end with error");
+        }
+    }
+    buf_clean(buffer);
+    return 0;
+}
+
+
+
+// Producteur
+void *producer(void *parametre)
+{
+  while(true)
+  {
+        struct fractal *f = buf_remove(listfractal);
+        int val;
+        for(int a=0; a<(fractal_get_width(f)*fractal_get_height(f));a++)
+        {
+            int x = a % (fractal_get_width(f));
+            int y = a/(fractal_get_width(f));
+            val = fractal_compute_value(f, x, y);
+            fractal_set_value(f,x,y,val);
+        }
+        buf_insert(buffer, f);
+  }
+  pthread_exit(NULL);
+}
+
+// Producteur
+void *producermoyenne(void *parametre)
+{
+  printf("Producermoyenne \n");
+  int item;
+  int moyenne;
+  int max = INT_MIN;
+  struct fractal *fractalhigh;
+  int d = 1;
+  int sum = 0;
+  while(d > 0)
+  {
+    printf("2");
+    struct fractal *f = buf_remove(listfractal);
+    int val;
+    sum = 0;
+    printf("largeur = %d et longueur = %d",fractal_get_width(f),(fractal_get_height(f)));
+    for(int a=0; a<(fractal_get_width(f))*(fractal_get_height(f));a++)
+    {
+      printf("%d \n",a);
+        int x = a % (f->width);
+        int y = a/(f->width);
+        val = fractal_compute_value(f, x, y);
+        sum = sum + val;
+        fractal_set_value(f,x,y,val);
+    }
+    printf("calcul \n");
+    if(sum>max)
+    {
+        printf("option 1 \n");
+        max = sum;
+        printf("la valeur max vaut : %d \n",max);
+        if(fractalhigh == NULL)
+        {
+          fractal_free(fractalhigh);
+        }
+        fractalhigh = f;
+    }
+    else
+    {
+      printf("option2 \n");
+
+        if(f!=NULL)
+        {
+          fractal_free(f);
+        }
+    }
+    d--;
+  }
+  struct fractalHigh * high2 = (struct fractalHigh *)malloc(sizeof(struct fractalHigh));
+  if(high2 == NULL)
+  {
+    if(fractalhigh!=NULL)
+    {
+      fractal_free(fractalhigh);
+      pthread_exit(NULL);
+    }
+  }
+  high2->average = sum;
+  high2->high = fractalhigh;
+  printf("Le nom de la fractal est : %s \n",fractal_get_name(fractalhigh));
+  pthread_exit((void *)high2);
+
+}
+
+
+
+// Consommateur
+void *consumer(void *parametre)
+{
+ int item;
+ while(true)
+ {
+    // section critique
+    struct fractal *fract;
+    fract = buf_remove(buffer);
+    write_bitmap_sdl(fract, fractal_get_name(fract));
+    fractal_free(fract);
+ }
+ pthread_exit(NULL);
 }
