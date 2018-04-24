@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "libfractal/fractal.h"
-#include "libfractal/main.h"
 #include <pthread.h>
 #include <errno.h>
 #include <semaphore.h>
@@ -17,12 +16,56 @@
 #include <errno.h>
 #include <SDL/SDL.h>
 
+struct buff{
+    struct fractal **buf;          /* Buffer contenant toutes les fractals */
+    int length;             /* Nombre de slots dans le buffer */
+    int begin;         /* buf[(begin+1)%n] est le premier �l�ment */
+    int end;          /* buf[end%n] est le dernier */
+    pthread_mutex_t mutex;
+    sem_t empty;       /* Nombre de places libres */
+    sem_t full;       /* Nombre d'items dans le buffer */
+};
 
+struct name{
+  char* name;
+  struct name *next;
+};
+
+struct nameacceslist{
+  struct name *head;
+  sem_t acces;
+};
+
+struct listthread{
+  struct thread *head;
+  int numberthread;
+};
+
+struct thread{
+  pthread_t *thread;
+  struct thread *next;
+};
+
+struct fractalHigh{
+  int average;
+  struct fractal *high;
+  sem_t acces;
+};
+
+struct numberlecteur{
+  int number;
+  sem_t acces;
+};
+
+struct programend{
+  int value;
+  sem_t acces;
+};
 
 void clean_all();
 int create_all(int etat);
 void printallname(struct nameacceslist *list);
-int readfile(int argc, char *argv[], int begin);
+int readfile(int argc, char *argv[], int begin, int type);
 void * lecture(void* parametre);
 struct fractal * split(char* line);
 int verifyduplicatename(char* name, struct nameacceslist *list);
@@ -47,6 +90,7 @@ int thread_moyenne();
 int thread_all();
 void *producer(void *parametre);
 void *producermoyenne(void *parametre);
+void *consumer(void *parametre);
 
 
 int max_thread;
@@ -85,17 +129,10 @@ int main(int argc, char *argv[])
                 return -1;
             }
             create_all(1);
-            err = readfile(argc,argv,4);
+            err = readfile(argc,argv,4,1);
             if(err == -1)
             {
                 printf("error during read file");
-                clean_all();
-                return -1;
-            }
-            err = thread_all();
-            if(err == -1)
-            {
-                printf("error during thread calculating");
                 clean_all();
                 return -1;
             }
@@ -106,17 +143,10 @@ int main(int argc, char *argv[])
         {
             max_thread = -1; //Si pas de nombre maximum de thread
             create_all(1);
-            err = readfile(argc,argv,2);
+            err = readfile(argc,argv,2,1);
             if(err == -1)
             {
                 printf("error during read file");
-                clean_all();
-                return -1;
-            }
-            err = thread_all();
-            if(err == -1)
-            {
-                printf("error during thread calculating");
                 clean_all();
                 return -1;
             }
@@ -137,17 +167,10 @@ int main(int argc, char *argv[])
                 return -1;
             }
             create_all(2);
-            err = readfile(argc,argv,3);
+            err = readfile(argc,argv,3,2);
             if(err == -1)
             {
                 printf("error during read file");
-                clean_all();
-                return -1;
-            }
-            err = thread_moyenne();
-            if(err == -1)
-            {
-                printf("error during thread calculating");
                 clean_all();
                 return -1;
             }
@@ -158,17 +181,10 @@ int main(int argc, char *argv[])
         {
             max_thread = -1;
             create_all(2);
-            err = readfile(argc,argv,1);
+            err = readfile(argc,argv,1,2);
             if(err == -1)
             {
                 printf("error during read file");
-                clean_all();
-                return -1;
-            }
-            err = thread_moyenne();
-            if(err == -1)
-            {
-                printf("error during thread calculating");
                 clean_all();
                 return -1;
             }
@@ -182,6 +198,15 @@ int main(int argc, char *argv[])
 void clean_all()
 {
   printf("Function clean all variables \n");
+  if(high != NULL)
+  {
+    if(high->high != NULL)
+    {
+      removetolistname(fractal_get_name(high->high),accesname);
+      fractal_free(high->high);
+    }
+    free(high);
+  }
   if(accesname != NULL)
   {
     freelistname(accesname);
@@ -226,14 +251,6 @@ void clean_all()
   if(endofproducteur != NULL)
   {
     free(endofproducteur);
-  }
-  if(high != NULL)
-  {
-    if(high->high != NULL)
-    {
-      free(high->high);
-    }
-    free(high);
   }
 }
 
@@ -594,7 +611,7 @@ void printallname(struct nameacceslist *list)
 }
 
 //MALLOC : listname,listfractal(buffer), semaphore acces,
-int readfile(int argc, char *argv[], int begin)
+int readfile(int argc, char *argv[], int begin, int type)
 {
   int err = 0;
   pthread_t lecteur[argc-begin];
@@ -630,12 +647,27 @@ int readfile(int argc, char *argv[], int begin)
     sem_post(&(otherfile->acces));
   }
 
+  if(type == 1)
+  {
+      err = thread_all();
+      if(err == -1)
+      {
+          printf("error during thread calculating");
+          return -1;
+      }
+  }
+  else
+  {
+      err = thread_moyenne();
+      if(err == -1)
+      {
+          printf("error during thread calculating");
+          return -1;
+      }
+  }
   for(int i = begin; i < argc;i++)
   {
     err = pthread_join(lecteur[i-begin], NULL);
-    sem_wait(&(otherfile->acces));
-    (otherfile->number)--;
-    sem_post(&(otherfile->acces));
     if(err!=0)
     {
         printf("lecture pthread end with error");
@@ -657,6 +689,9 @@ void * lecture(void* parametre)
   if(file==-1)
   {
     printf("error during file opening : %s",filename);
+    sem_wait(&(otherfile->acces));
+    (otherfile->number)--;
+    sem_post(&(otherfile->acces));
     pthread_exit(NULL);
   }
   else
@@ -675,19 +710,25 @@ void * lecture(void* parametre)
           if(close(file)==-1)
           {
                   printf("error during file closing : %s",filename);
+                  sem_wait(&(otherfile->acces));
+                  (otherfile->number)--;
+                  sem_post(&(otherfile->acces));
                   pthread_exit(NULL);
           }
           if(etat < 0)
           {
             printf("error during file reading : %s",filename);
           }
+          sem_wait(&(otherfile->acces));
+          (otherfile->number)--;
+          sem_post(&(otherfile->acces));
           pthread_exit(NULL);
         }
-        printf("%c",caractere);
+        //printf("%c",caractere);
         *(ligne+i) = caractere;
         i++;
       }
-      printf("\n");
+      //printf("\n");
       if((*ligne != '#') && (*ligne != '\n')) //il ne s'agit pas d'une ligne de commentaire ni d'une ligne vide
       {
         struct fractal *newfract = split(ligne);
@@ -696,9 +737,15 @@ void * lecture(void* parametre)
           if(close(file)==-1)
           {
                  printf("error during file closing : %s",filename);
+                 sem_wait(&(otherfile->acces));
+                 (otherfile->number)--;
+                 sem_post(&(otherfile->acces));
                  pthread_exit(NULL);
           }
           printf("fail during fractal build");
+          sem_wait(&(otherfile->acces));
+          (otherfile->number)--;
+          sem_post(&(otherfile->acces));
           pthread_exit(NULL);
         }
         else
@@ -712,9 +759,15 @@ void * lecture(void* parametre)
               if(close(file)==-1)
               {
                       printf("error during file closing : %s",filename);
+                      sem_wait(&(otherfile->acces));
+                      (otherfile->number)--;
+                      sem_post(&(otherfile->acces));
                       pthread_exit(NULL);
               }
               printf("fail during add name to list");
+              sem_wait(&(otherfile->acces));
+              (otherfile->number)--;
+              sem_post(&(otherfile->acces));
               pthread_exit(NULL);
             }
           }
@@ -728,9 +781,15 @@ void * lecture(void* parametre)
     if(close(file)==-1)
     {
             printf("error during file closing : %s",filename);
+            sem_wait(&(otherfile->acces));
+            (otherfile->number)--;
+            sem_post(&(otherfile->acces));
             pthread_exit(NULL);
     }
     printf("fin lecture pour un thread \n");
+    sem_wait(&(otherfile->acces));
+    (otherfile->number)--;
+    sem_post(&(otherfile->acces));
     pthread_exit(NULL);
   }
 }
@@ -963,7 +1022,7 @@ void buf_clean(struct buff *buffer)
 {
     struct fractal *f;
     int ret = buf_isempty(buffer,&f);
-    printf("%d",ret);
+    printf(" Buffer is empty  == -1 sinon 0 :%d",ret);
     while(ret == 0 && f != NULL)
     {
       printf("Il reste une fractal : %s \n",fractal_get_name(f));
@@ -1074,7 +1133,6 @@ int fractalhighmodify(struct fractalHigh *f, struct fractal *frac, int average)
     printf("DESTROY %s avec comme moyenne : %d ///////////////////////////////// ",fractal_get_name(frac),average);
   }
 
-  printallname(accesname);
   sem_wait(&(f->acces));
   if(f->average < average)
   {
@@ -1284,7 +1342,15 @@ int thread_all()
 {
     int err = 0;
     int numberproducteur = 0;
-    for(int i=0;((i<max_thread || max_thread < 0) && (isendofprogram(endoflecture)==0));i++) {
+    int numberconsumer = 0;
+
+    int arret =0;
+    int i =0; //pour les producteurs
+    int j =0;
+    while(arret == 0)
+    {
+      if((i<max_thread || max_thread < 0) && (isendofprogram(endoflecture)==0))
+      {
         err=insertthread(producerthread,(void*)&producer);
         if(err!=0)
         {
@@ -1296,18 +1362,15 @@ int thread_all()
           (otherproducteur->number)++;
           sem_post(&(otherproducteur->acces));
           numberproducteur++;
+          i++;
         }
-    }
-    printf("numbre thread producteur créé : %d \n",numberproducteur);
-
-    int numberconsumer = 0;
-    for(int i=0;((i<max_thread || max_thread < 0) && (isendofprogram(endofproducteur)==0));i++) {
-    //for(int i=0;(i<5);i++) {
+      }
+      if(j<100 && (isendofprogram(endofproducteur)==0))
+      {
         err = sem_trywait(&(buffer->full));
         if(err != 0)
         {
-            //printf("pas encore de fractal à ditmapper");
-            i--;
+
         }
         else
         {
@@ -1321,10 +1384,20 @@ int thread_all()
           else
           {
             numberconsumer++;
+            j++;
           }
         }
+      }
+      else
+      {
+        arret = -1;
+        printf("Arret de création des threads \n");
+      }
     }
+    printf("numbre thread producteur créé : %d \n",numberproducteur);
     printf("Nombre de thread consumer créé : %d \n",numberconsumer);
+
+
     int numberproducteurrecup = 0;
     int value = 0;
     while(value == 0)
