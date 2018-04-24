@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
                 clean_all();
                 return -1;
             }
-            create_all(1);
+            create_all(1);                          //Warning this call migth fail
             err = readfile(argc,argv,4,1);
             if(err == -1)
             {
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
         else
         {
             max_thread = -1; //Si pas de nombre maximum de thread
-            create_all(1);
+            create_all(1);                          //Warning this call migth fail
             err = readfile(argc,argv,2,1);
             if(err == -1)
             {
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
                 clean_all();
                 return -1;
             }
-            create_all(2);
+            create_all(2);                          //Warning this call migth fail
             err = readfile(argc,argv,3,2);
             if(err == -1)
             {
@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
         else
         {
             max_thread = -1;
-            create_all(2);
+            create_all(2);                          //Warning this call migth fail
             err = readfile(argc,argv,1,2);
             if(err == -1)
             {
