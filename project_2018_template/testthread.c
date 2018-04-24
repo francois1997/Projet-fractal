@@ -17,21 +17,6 @@
 #include <errno.h>
 #include <SDL/SDL.h>
 
-#define MAX_ITER 4096
-#define itoc(x) ((0x00ffffff/MAX_ITER)*(x))
-
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-#define RMASK 0xff000000
-#define GMASK 0x00ff0000
-#define BMASK 0x0000ff00
-#define AMASK 0x000000ff
-#else
-#define RMASK 0x000000ff
-#define GMASK 0x0000ff00
-#define BMASK 0x00ff0000
-#define AMASK 0xff000000
-#endif
-
 
 
 void printallname(struct nameacceslist *list);
@@ -41,6 +26,7 @@ int max_thread;
 struct buff *buffer;
 struct buff *listfractal;
 struct nameacceslist *accesname;
+struct numberlecteur *otherfile;
 
 int main(int argc, char *argv[])
 {
@@ -171,7 +157,7 @@ void printallname(struct nameacceslist *list)
       printf("%s \n",current->name);
       current = (current->next);
     }
-    sem_post(&(list->acces));
+  sem_post(&(list->acces));
 }
 
 
@@ -203,10 +189,20 @@ int readfile(int argc, char *argv[], int begin)
   if(err == -1){
     buf_clean(listfractal);
     free(listfractal);
-    free(accesname);
+    freelistname(accesname);
     return -1;
   }
   pthread_t lecteur[argc-begin];
+  otherfile = (struct numberlecteur * )malloc(sizeof(struct numberlecteur));
+  otherfile->number = 0;
+  err = sem_init(&(otherfile->acces), 0, 1);
+  if(err == -1){
+    buf_clean(listfractal);
+    free(listfractal);
+    freelistname(accesname);
+    free(otherfile);
+    return -1;
+  }
   for(int i = begin; i < argc;i++)
   {
     char * filename = *(argv+i);
@@ -218,15 +214,26 @@ int readfile(int argc, char *argv[], int begin)
       free(listfractal);
       sem_destroy(&(accesname->acces));
       freelistname(accesname);
+      free(otherfile);
       return -1;
     }
+    sem_wait(&(otherfile->acces));
+    (otherfile->number)++;
+    sem_post(&(otherfile->acces));
   }
   for(int i = begin; i < argc;i++)
   {
     err = pthread_join(lecteur[i], NULL);
-    printf("THREAD récupèré \n");
+    sem_wait(&(otherfile->acces));
+    (otherfile->number)--;
+    sem_post(&(otherfile->acces));
     if(err!=0)
     {
+        buf_clean(listfractal);
+        free(listfractal);
+        sem_destroy(&(accesname->acces));
+        freelistname(accesname);
+        free(otherfile);
         printf("lecture pthread end with error");
         return -1;
     }
@@ -234,32 +241,6 @@ int readfile(int argc, char *argv[], int begin)
   return 0;
 }
 
-
-int readfile2(int argc, char *argv[],int begin)
-{
-  int err = 0;
-  accesname = (struct nameacceslist *)malloc(sizeof(struct nameacceslist));
-  if(accesname == NULL)
-  {
-    return -1;
-  }
-  accesname->head = NULL;
-  err = sem_init(&(accesname->acces), 0, 1);
-  if(err == -1){
-    return -1;
-  }
-  listfractal = (struct buff *)malloc(sizeof(struct buff));
-  err = buf_init(listfractal, 100); //quelle taille ?
-  if(err != 0)
-  {
-    return -1;
-  }
-  lecture((void*)(argv[begin]));
-  printallname(accesname);
-  struct fractal *rem = buf_remove(listfractal);
-  printf("%s",fractal_get_name(rem));
-  //printf("%d",*(int *)(ret));
-}
 
 //MALLOC : fermer fichier file
 void * lecture(void* parametre)
@@ -592,6 +573,39 @@ void buf_insert(struct buff *buffer, struct fractal *item)
     sem_post(&(buffer->full));
 }
 
+int buf_isempty(struct buff *buffer)
+{
+  int err = 0;
+  err = sem_trywait(&(buffer->full));
+  if(err != 0)
+  {
+    return -1;
+  }
+  else
+  {
+    sem_post(&(buffer->full));
+    return 0;
+  }
+}
+
+int verify_end(struct buff *buffer)
+{
+
+  int etat = buf_isempty(buffer);
+  sem_wait(&(otherfile->acces));
+  int etat2 = otherfile->number;
+  sem_post(&(otherfile->acces));
+  if(etat != 0 || etat2 != 0)
+  {
+    return 0;
+  }
+  else
+  {
+    printf("Fin du programme");
+    return -1;
+  }
+}
+
 
 /* @pre sbuf!=NULL
  * @post retire le dernier item du buffer partag�
@@ -601,6 +615,7 @@ struct fractal* buf_remove(struct buff *buffer)
     sem_wait(&(buffer->full));
     pthread_mutex_lock(&buffer->mutex);
     struct fractal *retour = ((buffer->buf)[(buffer->begin)+1]);
+    ((buffer->buf)[(buffer->begin)+1]) = NULL;
     buffer->begin = (buffer->begin + 1)%(buffer->length);
     pthread_mutex_unlock(&buffer->mutex);
     sem_post(&(buffer->empty));
@@ -619,7 +634,7 @@ int thread_moyenne()
     }
     if(max_thread==-1)
     {
-      max_thread = 1;
+      max_thread = 6;
     }
     printf("nombre thread max = %d \n",max_thread);
     printf("Creation buffer \n");
@@ -647,20 +662,27 @@ int thread_moyenne()
     for(int i=0; i<max_thread; i++)
     {
         void **ret;
-        printf("Thread Producteur récupèré");
+        printf("Thread Producteur avant récupèré");
         err = pthread_join(producteur[i], ret);
+        printf("FAIT1 :) \n");
         if(err!=0)
         {
-            printf("pthread end with error$");
+            printf("pthread end with error");
             //Faire quelque chose !!
+            return -1;
         }
         printf("Thread Producteur récupèré");
-        if((struct fractalHigh *)(*ret) == NULL)
+        if(ret == NULL)
+        {
+          printf("No return Value \n");
+          return -1;
+        }
+        if((*ret) == NULL)
         {
           printf("No fractal return \n");
           return -1;
         }
-        struct  fractalHigh *high = (struct fractalHigh *)(*ret);
+        struct fractalHigh *high = (struct fractalHigh *)(*ret);
         if(high == NULL)
         {
             printf("Error during reception producteurmoyenne");
@@ -683,8 +705,17 @@ int thread_moyenne()
           free(high);
         }
     }
-    write_bitmap_sdl(big, fractal_get_name(big));
-    fractal_free(big);
+    printf("FAIT :) \n");
+    err = write_bitmap_sdl(big, fractal_get_name(big));
+    if(err != 0)
+    {
+      printf("Error with write bitmap function");
+      return -1;
+    }
+    if(big != NULL)
+    {
+      fractal_free(big);
+    }
     buf_clean(buffer);
     return 0;
 }
@@ -733,6 +764,7 @@ int thread_all()
     }
     for(int i =0; i<max_thread; i++)
     {
+          printf("THREAD ALL récupèré \n");
         err = pthread_join(consommateur[i], NULL);
         if(err!=0)
         {
@@ -774,7 +806,7 @@ void *producermoyenne(void *parametre)
   struct fractal *fractalhigh;
   int d = 1;
   int sum = 0;
-  while(d > 0)
+  while(d>0) //ATTENTION IL FAUDRAIT RETIRER EN MEME TEMPS
   {
     printf("2");
     struct fractal *f = buf_remove(listfractal);
@@ -783,13 +815,14 @@ void *producermoyenne(void *parametre)
     printf("largeur = %d et longueur = %d",fractal_get_width(f),(fractal_get_height(f)));
     for(int a=0; a<(fractal_get_width(f))*(fractal_get_height(f));a++)
     {
-      printf("%d \n",a);
+      //printf("%d \n",a);
         int x = a % (f->width);
         int y = a/(f->width);
         val = fractal_compute_value(f, x, y);
         sum = sum + val;
         fractal_set_value(f,x,y,val);
     }
+    sum = sum / (fractal_get_width(f))*(fractal_get_height(f));
     printf("calcul \n");
     if(sum>max)
     {
@@ -805,13 +838,17 @@ void *producermoyenne(void *parametre)
     else
     {
       printf("option2 \n");
-
         if(f!=NULL)
         {
           fractal_free(f);
         }
     }
     d--;
+  }
+  if(fractalhigh == NULL)
+  {
+    printf("No high Fractal");
+    pthread_exit(NULL);
   }
   struct fractalHigh * high2 = (struct fractalHigh *)malloc(sizeof(struct fractalHigh));
   if(high2 == NULL)
