@@ -40,12 +40,12 @@ int main(int argc, char *argv[])
 	}
 	for (int j = 0;j < argc-2; j++)
 	{
-		for (int i = 0; i < 50;i++)
+		for (int i = 0; i < atoi(argv[1]);i++)
 		{
 			if (fd[j] > 0)
 			{
-				double a = -(rand() % 10)/10;
-				double b = (rand() % 10)/10;
+				double a = ((rand() % 20)/10)-1;
+				double b = ((rand() % 20)/10)-1;
 				snprintf( name, snprintf( NULL, 0, "%d", i) + 1, "%d", i);
 				int size = (int)((i/10)+1)
 				printf("name :%s a :%e b :%e", name, a, b);
