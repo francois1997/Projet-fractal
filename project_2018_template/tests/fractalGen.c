@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 	char nl = '\n';
 	if (argc < 3)
 	{
-		printf("Uses fractalGen [int] [filename] *[filename]");
+		printf("Uses fractalGen [int] [filename] *[filename]\n");
 	}
 	int fd[argc-2];
 	int controle = 0;
@@ -32,13 +32,13 @@ int main(int argc, char *argv[])
 		controle++;
 		if (fd[i-2] == -1)
 		{
-			fprintf(stderr, "Error while opening File : %s", argv[i]);
+			fprintf(stderr, "Error while opening File : %s\n", argv[i]);
 			controle--;
 		}
 	}
 	if (controle == 0)
 	{
-		fprintf(stderr, "No file opened")
+		fprintf(stderr, "No file opened\n")
 		return -1;
 	}
 	for (int j = 0;j < argc-2; j++)
@@ -47,11 +47,11 @@ int main(int argc, char *argv[])
 		{
 			if (fd[j] > 0)
 			{
-				double a = ((rand() % 20)/10)-1;
-				double b = ((rand() % 20)/10)-1;
+				double a = (((double)rand() % 20)/10)-1;
+				double b = (((double)rand() % 20)/10)-1;
 				snprintf( name, snprintf( NULL, 0, "%d", i) + 1, "%d", i);
 				int size = (int)((i/10)+1)
-				printf("name :%s a :%e b :%e", name, a, b);
+				printf("name :%s a :%e b :%e\n", name, a, b);
 				write(fd[j], (void*)name, size);
 				write(fd[j], (void*)&sp, 1);
 				write(fd[j], (void*)&width, sizeof(int));
