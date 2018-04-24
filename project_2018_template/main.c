@@ -275,7 +275,7 @@ void *FractCalculus (void *param){
 
 			sem_wait(&empty2);
 			pthread_mutex_lock(&buffycalculus);
-			*(Buffer2) + fully2) = fractalis;
+			*(Buffer2 + fully2) = fractalis;
 			fully2++;
 			pthread_mutex_unlock(&buffycalculus);
 			sem_post(&full2);
@@ -422,7 +422,7 @@ void fileopener(int filenumber, char ** filename, int *fd, int offset){
 	int test = 0;
 	for (int i = 0; i < printNumber; i++)
 	{
-		test = pthread_create((threads + i), NULL, &FractCalculus, NULL;
+		test = pthread_create((threads + i), NULL, &FractCalculus, NULL);
 		rendevous++;
 		if (test != 0)
 		{
