@@ -45,7 +45,7 @@ struct fractal **Buffer2;
 
 void *FractCreate (void *param){
 	//check that calculating threads have been created before launching anything
-	// *CRITICAL* change the reading with the mmap function and fstat
+	// *CRITICAL* change the reading with the mmap function and fstat Good Idea :)
 
 	int test2 = 0;
 	int test3 = -1;
@@ -53,7 +53,8 @@ void *FractCreate (void *param){
 
 	while (test2 == 0 || test3 == -1)
 	{
-		test3 = sem_getvalue(&rdv2, &test2);
+		test3 = sem_getvalue(&rdv2, &test2); //pendant le temps de création des threads de calcul il est possible que 1 fractal
+		// soit déjà terminé d'être calculer alors que aucun bitmap n'est là pour la récupèrer :/
 		sleep(1);
 	}
 
@@ -394,7 +395,7 @@ void fileopener(int filenumber, char ** filename, int *fd, int offset){
 		{
 			*(para + i) = fd[i];
 			test = pthread_create((threads+i), NULL, &FractCreate, (void*)(para+i));
-			rendevous++;
+			rendevous++; //mettre rendevous après le if ;) comme ca tu l'incremente puis tu le decremente pas si il y a une erreur
 			if (test != 0)
 			{
 				fprintf(stderr, "reading thread creation failed, thread number : %i \n", i);
@@ -406,6 +407,7 @@ void fileopener(int filenumber, char ** filename, int *fd, int offset){
 	if (rendevous == 0)
 	{
 		fprintf(stderr, "No reading threads created\n");
+		//est ce que tu free para ? vu que aucun thread n'y a acces ?
 		return NULL;
     }
 
@@ -469,11 +471,11 @@ int main(int argc, char *argv[]){
 	struct fractal *fractalis = NULL;
 	struct fractal *compa;
 	int *para;
-	int test1;
+	int test1; //peut être mettre des noms de variables plus parlantent :)
 	int test2;
 	sem_init(&empty1, 0, argc*2);
 	sem_init(&full1, 0, 0);
-	sem_init(&full2, 0, 0);
+	sem_init(&full2, 0, 0); //tu initialise les deux buffers même si -d n'est pas là ?
 	sem_init(&empty2, 0, argc*2);
 	Buffer1 = (struct fractal**)malloc(sizeof(struct fractal*) * argc * 2);
 	if (Buffer1 == NULL)
@@ -500,7 +502,7 @@ int main(int argc, char *argv[]){
 
 
 	//checking the number of arguments, a input file and output file is always needed
-
+	// Pourquoi ne pas le vérifier avant de créer les buffers ?
 
     if (argc >= 3)
 	{
@@ -511,12 +513,14 @@ int main(int argc, char *argv[]){
 			int readingThreads = argc - 5;							//-5 because of [nameoffunc, -d, --maxthreads, N, fileout]
 			pthread_t readerThreads[readingThreads];
 			pthread_t calculusThreads[atoi(argv[3])];
-			pthread_t BitThreads[atoi(argv[3])];
+			pthread_t BitThreads[atoi(argv[3])]; // Est ce que c'est conter dans les thread de calcul ?
 			int fd[readingThreads];
 
 			//opening the streams for the files
 
 			fileopener(readingThreads, argv, fd, 4);      			// add an offset
+			// Tu les ouvres tous avant ? Du coup si t'as un problème lors de la création des threads tu dois tous les refermer ?
+			//Vaut pas mieux les ouvrir dans le thread lui même ?
 
 			//creating the threads for reading
 
@@ -609,6 +613,10 @@ int main(int argc, char *argv[]){
 
 
 		}
+	    
+	    	// Il faudrait faire une fonction générale pour la création des threads car le code est pratiquement le même en dessous 
+	    	// et au dessus ;)
+	    
 		else if (argCmp(argv[1], d))								//case when only -d option is used
 		{
 			//checking how many threads should be created for reading and calculating
@@ -713,6 +721,8 @@ int main(int argc, char *argv[]){
 			}
 
 		}
+	    
+	    	// Pareil pour les deux code ci dessous ce sont les mêmes apart les 4 premières ligne :)
 		else if (argCmp(argv[1], maxthreads))						//case when only --maxthreads option is used
 		{
 			//checking how many threads should be created for reading and calculating
