@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
                 clean_all();
                 return -1;
             }
-            create_all(1);                          //Warning this call migth fail
+            create_all(1);
             err = readfile(argc,argv,4,1);
             if(err == -1)
             {
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
         else
         {
             max_thread = -1; //Si pas de nombre maximum de thread
-            create_all(1);                          //Warning this call migth fail
+            create_all(1);
             err = readfile(argc,argv,2,1);
             if(err == -1)
             {
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
                 clean_all();
                 return -1;
             }
-            create_all(2);                          //Warning this call migth fail
+            create_all(2);
             err = readfile(argc,argv,3,2);
             if(err == -1)
             {
@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
         else
         {
             max_thread = -1;
-            create_all(2);                          //Warning this call migth fail
+            create_all(2);
             err = readfile(argc,argv,1,2);
             if(err == -1)
             {
@@ -618,7 +618,7 @@ int readfile(int argc, char *argv[], int begin, int type)
   // Il faudrai attendre la fin des thread avant de supprimer les resources
   int trynumber = 0;
   int threadreaderfail = 0;
-  for(int i = begin; i < argc;i++)
+  for(int i = begin; (i < argc) && (isendofprogram(end) == 0);i++)
   {
     char * filename = *(argv+i);
     err = pthread_create(&lecteur[i-begin],NULL,(void *)&lecture,(void *)(*(argv+i)));
@@ -1282,7 +1282,7 @@ int thread_moyenne()
       return -1;
     }
     fractalhighmodify(high,NULL,INT_MIN);
-    for(int i=0;((i<max_thread || max_thread < 0) && (isendofprogram(endoflecture)==0));i++) {
+    for(int i=0;((i<max_thread || max_thread < 0) && (isendofprogram(endoflecture)==0) && (isendofprogram(end) == 0));i++) {
         err=insertthread(producerthread,(void*)&producermoyenne);
         if(err!=0)
         {
@@ -1318,22 +1318,30 @@ int thread_moyenne()
           printf("Thread Producteur récupèré \n");
         }
     }
-    struct fractal *big = getfractalhigh(high);
-    if(big == NULL)
+    if(isendofprogram(end) != 0)
     {
-      printf("No fractal high\n");
-      setendofprogram(end);
+      struct fractal *big = getfractalhigh(high);
+      if(big == NULL)
+      {
+        printf("No fractal high\n");
+        setendofprogram(end);
+        return -1;
+      }
+      printf("Le nom de la fractal est : %s \n",fractal_get_name(big));
+      err = write_bitmap_sdl(big, fractal_get_name(big));
+      if(err != 0)
+      {
+        printf("Error with write bitmap function");
+        return -1;
+      }
+      printf("thread créé : %d et thread recupere  : %d \n",number,numberrecup);
+      return 0;
+    }
+    else
+    {
+      printf("Pogram stop with end message");
       return -1;
     }
-    printf("Le nom de la fractal est : %s \n",fractal_get_name(big));
-    err = write_bitmap_sdl(big, fractal_get_name(big));
-    if(err != 0)
-    {
-      printf("Error with write bitmap function");
-      return -1;
-    }
-    printf("thread créé : %d et thread recupere  : %d \n",number,numberrecup);
-    return 0;
 }
 
 
@@ -1347,7 +1355,7 @@ int thread_all()
     int arret =0;
     int i =0; //pour les producteurs
     int j =0;
-    while(arret == 0)
+    while((arret == 0 )&& (isendofprogram(end)== 0))
     {
       if((i<max_thread || max_thread < 0) && (isendofprogram(endoflecture)==0))
       {
@@ -1461,12 +1469,17 @@ void *producer(void *parametre)
   {
         printf("FRACTAL : %s \n",fractal_get_name(f));
         int val;
-        for(int a=0; a<(fractal_get_width(f)*fractal_get_height(f));a++)
+        for(int a=0; (a<(fractal_get_width(f)*fractal_get_height(f)));a++)
         {
             int x = a % (fractal_get_width(f));
             int y = a/(fractal_get_width(f));
             val = fractal_compute_value(f, x, y);
             fractal_set_value(f,x,y,val);
+        }
+        if(isendofprogram(end)!= 0)
+        {
+          fractal_free(f);
+          pthread_exit(NULL);
         }
         buf_insert(buffer, f);
         printf("Une fractal terminee avec succes \n");
@@ -1492,13 +1505,18 @@ void *producermoyenne(void *parametre)
         int val;
         sum = 0;
         printf("largeur = %d et longueur = %d",fractal_get_width(f),(fractal_get_height(f)));
-        for(int a=0; a<(fractal_get_width(f))*(fractal_get_height(f));a++)
+        for(int a=0; (a<(fractal_get_width(f)*fractal_get_height(f)));a++)
         {
             int x = a % (f->width);
             int y = a/(f->width);
             val = fractal_compute_value(f, x, y);
             sum = sum + val;
             fractal_set_value(f,x,y,val);
+        }
+        if(isendofprogram(end) != 0)
+        {
+          fractal_free(f);
+          pthread_exit(NULL);
         }
         sum = sum / (fractal_get_width(f))*(fractal_get_height(f));
         int retour = fractalhighmodify(high,f,sum);
