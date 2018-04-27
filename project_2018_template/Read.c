@@ -148,7 +148,7 @@ int firstlf(struct fileinfo *file)
  *  1 well it seems we are at the end of the file you should ignore what's in biffer
  *  2 we are at the end of the file too but this time you can use what's inside biffer
  */
-int read2(struct fileinfo *file, char* biffer, int lenbiffer)
+int read(struct fileinfo *file, char* biffer, int lenbiffer)
 {
 	int status = 0;
 	int t = 0;
@@ -176,7 +176,7 @@ int read2(struct fileinfo *file, char* biffer, int lenbiffer)
 			{
 				return 1;
 			}
-			return read2(file, biffer, lenbiffer);	
+			return read(file, biffer, lenbiffer);	
 		}
 		else if (*((file->readhead)+j) != '\n' && (file->readsize)-j == 0) 										//arrived at the end of the memory map but not a the end of the line
 		{
@@ -220,7 +220,7 @@ int read2(struct fileinfo *file, char* biffer, int lenbiffer)
 	} while (status);
 	
 	fprintf(stderr, "nothing happened, well that's an error\n");
-	fprintf(stderr, "error in read2 function\n");
+	fprintf(stderr, "error in read function\n");
 	return -1;
 }
  
@@ -242,26 +242,10 @@ void *reading(void* parametre)
 	
 	char biffer[5*65];
 	int lenbiffer = 5*65;
-	int readtest = 0;
 	
 	if (refresh(fileptr) == -1)
 	{
 		/*stop the reading thread*/
-	}
-	
-	
-	readtest = read2(fileptr, biffer, lenbiffer);
-	if (readtest == 0)
-	{
-		/*buffer and all the stuff*/
-	}
-	else if (readtest == 1 || readtest == -1)
-	{
-		/*close the thread without even touching the buffer*/
-	}
-	else if (readtest == 2)
-	{
-		/*insert a last fractal in the buffer and then end the thread*/
 	}
 	
 	
