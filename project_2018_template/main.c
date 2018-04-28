@@ -105,6 +105,7 @@ struct programend *endofproducteur = NULL;
 struct fractalHigh *high = NULL;
 struct listthread *producerthread = NULL;
 struct listthread *consumerthread = NULL;
+pthread_mutex_t verification;
 
 int main(int argc, char *argv[])
 {
@@ -118,9 +119,7 @@ int main(int argc, char *argv[])
     {
         if(strcmp(argv[2],"--maxthreads")==0)
         {
-            printf("dans maxthread \n");
             max_thread = atoi(argv[3]);
-            printf("max_thread vaut :%d \n",max_thread);
             if(max_thread < 1)
             {
                 printf("bad max_thread number");
@@ -615,14 +614,12 @@ int readfile(int argc, char *argv[], int begin, int type)
 {
   int err = 0;
   pthread_t lecteur[argc-begin];
-  // Il faudrai attendre la fin des thread avant de supprimer les resources
   int trynumber = 0;
   int threadreaderfail = 0;
   for(int i = begin; (i < argc) && (isendofprogram(end) == 0);i++)
   {
     char * filename = *(argv+i);
     err = pthread_create(&lecteur[i-begin],NULL,(void *)&lecture,(void *)(*(argv+i)));
-    printf("%s thread create \n",filename);
     if(err != 0)
     {
       if(trynumber > 10)
@@ -646,7 +643,6 @@ int readfile(int argc, char *argv[], int begin, int type)
     (otherfile->number)++;
     sem_post(&(otherfile->acces));
   }
-
   if(type == 1)
   {
       err = thread_all();
@@ -674,7 +670,6 @@ int readfile(int argc, char *argv[], int begin, int type)
         setendofprogram(end);
     }
   }
-  printallname(accesname);
   return isendofprogram(end);
 }
 
@@ -682,7 +677,8 @@ int readfile(int argc, char *argv[], int begin, int type)
 //MALLOC : fermer fichier file
 void * lecture(void* parametre)
 {
-  printf("%s",(char *)parametre);
+
+  printf("Lecture du fichier : %s \n",(char *)parametre);
   int err=0;
   char* filename = (char *)parametre;
   int file = open(filename,O_RDONLY);
@@ -786,7 +782,6 @@ void * lecture(void* parametre)
             sem_post(&(otherfile->acces));
             pthread_exit(NULL);
     }
-    printf("fin lecture pour un thread \n");
     sem_wait(&(otherfile->acces));
     (otherfile->number)--;
     sem_post(&(otherfile->acces));
@@ -986,7 +981,6 @@ void freelistname(struct nameacceslist *list)
  */
 int buf_init(struct buff *buf, int n)
 {
-    printf("INIT ...");
     int err;
     buf->buf = (struct fractal **)malloc(sizeof(struct fractal*)*n);
     if((buf->buf)==NULL)
@@ -1022,7 +1016,7 @@ void buf_clean(struct buff *buffer)
 {
     struct fractal *f;
     int ret = buf_isempty(buffer,&f);
-    printf(" Buffer is empty  == -1 sinon 0 :%d",ret);
+    printf(" Buffer is empty  == -1 sinon 0 :%d \n",ret);
     while(ret == 0 && f != NULL)
     {
       printf("Il reste une fractal : %s \n",fractal_get_name(f));
@@ -1062,8 +1056,8 @@ int buf_isempty(struct buff *buffer,struct fractal **f)
   else
   {
     pthread_mutex_lock(&buffer->mutex);
-    struct fractal *retour = ((buffer->buf)[(buffer->begin)+1]);
-    ((buffer->buf)[(buffer->begin)+1]) = NULL;
+    struct fractal *retour = ((buffer->buf)[((buffer->begin)+1)%(buffer->length)]);
+    ((buffer->buf)[((buffer->begin)+1)%(buffer->length)]) = NULL;
     buffer->begin = (buffer->begin + 1)%(buffer->length);
     pthread_mutex_unlock(&buffer->mutex);
     sem_post(&(buffer->empty));
@@ -1089,58 +1083,68 @@ int isendofprogram(struct programend *f)
 
 int verify_end(struct buff *buffer,struct fractal **f)
 {
-
+  int val;
+  sem_getvalue(&(buffer->full),&val);
+  //printf("la valeur de la semaphore pour consommateur est : %d",val);
   int etat = buf_isempty(buffer,f);
   sem_wait(&(otherfile->acces));
-    int etat2 = otherfile->number;
-    sem_post(&(otherfile->acces));
-    if(etat == 0 || etat2 != 0) //encore des fractal dans buffer ou encore des fichiers de lecture
-    {
+  int etat2 = otherfile->number;
+  sem_post(&(otherfile->acces));
+  if(etat == 0 || etat2 != 0) //encore des fractal dans buffer ou encore des fichiers de lecture
+  {
       return 0;
-    }
-    else
-    {
-      setendofprogram(endoflecture);
-      printf("Fin du programme pour les producteurs \n");
-      return -1;
-    }
+  }
+  else
+  {
+    setendofprogram(endoflecture);
+    printf("Fin du programme pour les producteurs \n");
+    return -1;
+  }
 }
 
 int verify_endproducteur(struct buff *buffer,struct fractal **f)
 {
-  int etat = buf_isempty(buffer,f);
+  pthread_mutex_lock(&verification);
+  int numbertry = 1;
+  int etat = 0;
+  while(numbertry >=0)
+  {
+    etat = buf_isempty(buffer,f);
+    if(*f != NULL)
+    {
+      numbertry = -1;
+    }
+    else
+    {
+      numbertry--;
+    }
+  }
   int etat2 = isendofprogram(endoflecture);
   sem_wait(&(otherproducteur->acces));
   int etat3 = otherproducteur->number;
   sem_post(&(otherproducteur->acces));
   if(etat == 0 || etat3 != 0 || etat2 == 0) //encore des fractal dans buffer ou encore des fichiers de lecture
   {
+    pthread_mutex_unlock(&verification);
     return 0;
   }
   else
   {
     setendofprogram(endofproducteur);
     printf("Fin du programme pour les consommateurs \n");
+    pthread_mutex_unlock(&verification);
     return -1;
   }
 }
 
-
 int fractalhighmodify(struct fractalHigh *f, struct fractal *frac, int average)
 {
-  if(frac != NULL)
-  {
-    printf("DESTROY %s avec comme moyenne : %d ///////////////////////////////// ",fractal_get_name(frac),average);
-  }
-
   sem_wait(&(f->acces));
   if(f->average < average)
   {
-    printf("MOYENNE ACTUEL DE : %d \n", f->average);
     f->average = average;
     if(f->high != NULL)
     {
-      printf("SUPPRIMER ,%d \n",average);
       removetolistname(fractal_get_name(f->high), accesname);
       fractal_free(f->high);
     }
@@ -1150,7 +1154,6 @@ int fractalhighmodify(struct fractalHigh *f, struct fractal *frac, int average)
   }
   else
   {
-    //fractal_free(frac);
     sem_post(&(f->acces));
     return 0;
   }
@@ -1233,6 +1236,7 @@ int insertthread(struct listthread *list,void* funct)
   }
   add->thread = new;
   add->next = NULL;
+
   if(head == NULL)
   {
     err=pthread_create(new,NULL,funct,NULL);
@@ -1292,7 +1296,6 @@ int thread_moyenne()
         }
         number++;
     }
-
     int value = 0;
     int numberrecup =0;
     while(value == 0)
@@ -1300,7 +1303,7 @@ int thread_moyenne()
         pthread_t *current = removethread(producerthread);
         if(current == NULL)
         {
-          printf("Plus de thread");
+          printf("Plus de thread producteur \n");
           value = -1;
         }
         else
@@ -1308,17 +1311,15 @@ int thread_moyenne()
           numberrecup ++;
           err = pthread_join(*current, NULL);
           free(current);
-          printf("FAIT1 :) \n");
           if(err!=0)
           {
               printf("pthread end with error");
               setendofprogram(end);
               return -1;
           }
-          printf("Thread Producteur récupèré \n");
         }
     }
-    if(isendofprogram(end) != 0)
+    if(isendofprogram(end) == 0)
     {
       struct fractal *big = getfractalhigh(high);
       if(big == NULL)
@@ -1351,13 +1352,12 @@ int thread_all()
     int err = 0;
     int numberproducteur = 0;
     int numberconsumer = 0;
-
     int arret =0;
     int i =0; //pour les producteurs
-    int j =0;
+    int j =0; //pour les consommateurs
     while((arret == 0 )&& (isendofprogram(end)== 0))
     {
-      if((i<max_thread || max_thread < 0) && (isendofprogram(endoflecture)==0))
+      if((i<max_thread || max_thread < 0) && (isendofprogram(endoflecture)==0) && (isendofprogram(end)==0))
       {
         err=insertthread(producerthread,(void*)&producer);
         if(err!=0)
@@ -1373,12 +1373,12 @@ int thread_all()
           i++;
         }
       }
-      if(j<100 && (isendofprogram(endofproducteur)==0))
+      if(j<20 && (isendofprogram(endofproducteur)==0) && (isendofprogram(end)==0))
       {
         err = sem_trywait(&(buffer->full));
         if(err != 0)
         {
-
+            sleep(0.5);
         }
         else
         {
@@ -1467,7 +1467,8 @@ void *producer(void *parametre)
   struct fractal *f;
   while((isendofprogram(endoflecture) == 0) && (isendofprogram(end)== 0) && (verify_end(listfractal,&f) == 0))
   {
-        printf("FRACTAL : %s \n",fractal_get_name(f));
+    if(f != NULL)
+    {
         int val;
         for(int a=0; (a<(fractal_get_width(f)*fractal_get_height(f)));a++)
         {
@@ -1478,11 +1479,18 @@ void *producer(void *parametre)
         }
         if(isendofprogram(end)!= 0)
         {
+          removetolistname(fractal_get_name(f),accesname);
           fractal_free(f);
           pthread_exit(NULL);
         }
+        printf("Une fractal terminee avec succes : %s \n",fractal_get_name(f));
         buf_insert(buffer, f);
-        printf("Une fractal terminee avec succes \n");
+    }
+    else
+    {
+      printf("Thread producteur sleep \n");
+      sleep(0.5);
+    }
   }
   sem_wait(&(otherproducteur->acces));
   (otherproducteur->number)--;
@@ -1493,7 +1501,6 @@ void *producer(void *parametre)
 // Producteur
 void *producermoyenne(void *parametre)
 {
-  printf("Producermoyenne \n");
   struct fractal *fractalhigh;
   int sum = 0;
   struct fractal *f;
@@ -1501,10 +1508,8 @@ void *producermoyenne(void *parametre)
   {
     if(f != NULL)
     {
-        //struct fractal *f = buf_remove(listfractal);
         int val;
         sum = 0;
-        printf("largeur = %d et longueur = %d",fractal_get_width(f),(fractal_get_height(f)));
         for(int a=0; (a<(fractal_get_width(f)*fractal_get_height(f)));a++)
         {
             int x = a % (f->width);
@@ -1515,17 +1520,19 @@ void *producermoyenne(void *parametre)
         }
         if(isendofprogram(end) != 0)
         {
+          printf("End programme different de 0 \n");
+          removetolistname(fractal_get_name(f), accesname);
           fractal_free(f);
           pthread_exit(NULL);
         }
         sum = sum / (fractal_get_width(f))*(fractal_get_height(f));
+        printf("Une fractal terminee avec succes : %s \n",fractal_get_name(f));
         int retour = fractalhighmodify(high,f,sum);
         if(retour == 0)
         {
           removetolistname(fractal_get_name(f), accesname);
           fractal_free(f);
         }
-        printf("Une fractal terminee avec succes \n");
      }
   }
   pthread_exit(NULL);
@@ -1536,7 +1543,7 @@ void *producermoyenne(void *parametre)
 // Consommateur
 void *consumer(void *parametre)
 {
- struct fractal *fract;
+ struct fractal *fract = NULL;
  while((isendofprogram(endofproducteur) == 0) && (isendofprogram(end)  == 0) && (verify_endproducteur(buffer,&fract) == 0))
  {
    if(fract != NULL)
@@ -1545,6 +1552,10 @@ void *consumer(void *parametre)
      write_bitmap_sdl(fract, fractal_get_name(fract));
      removetolistname(fractal_get_name(fract), accesname);
      fractal_free(fract);
+     fract = NULL;
+   }
+   else
+   {
    }
  }
  pthread_exit(NULL);
