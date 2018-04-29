@@ -6,6 +6,7 @@
 #include <sys/mman.h>
 #include <stdint.h>
 #include <string.h>
+#include <fcntl.h>
 
 
 #define SIZE_MAX 16777216
@@ -163,14 +164,15 @@ int read2(struct fileinfo *file, char* biffer, int lenbiffer)
 			j++;
 			i++;
 		}
+		printf("j :%d et i :%d\n", j, i);
 		if (i == lenbiffer) 																					//arrived at the end of the buffer
 		{
-			frpintf(stderr, "line too long for the biffer or the biffer too small\n");
+			fprintf(stderr, "line too long for the biffer or the biffer too small\n");
 			fprintf(stderr, "line skipped\n");
 			t = firstlf(file);
 			if (t == -1)
 			{
-				fprintf(stderr, "error in firstlf function");
+				fprintf(stderr, "error in firstlf function\n");
 				return -1;
 			}
 			if (t == 1)
@@ -184,7 +186,7 @@ int read2(struct fileinfo *file, char* biffer, int lenbiffer)
 			if (file->finished == 1)
 			{
 				printf("File finished fd :%d\n", file->fd);
-				printf("return code 1");
+				printf("return code 1\n");
 				return 1;
 			}
 			if (refresh(file) == -1)
@@ -200,7 +202,7 @@ int read2(struct fileinfo *file, char* biffer, int lenbiffer)
 			if (file->finished == 1)
 			{
 				printf("File finished fd :%d\n", file->fd);
-				printf("return code 2");
+				printf("return code 2\n");
 				*(biffer + i) = '\n';
 				return 2;
 			}
@@ -216,7 +218,7 @@ int read2(struct fileinfo *file, char* biffer, int lenbiffer)
 			file->readhead = file->readhead + j+1;
 			file->readsize = (file->readsize)-(j+1);
 			*(biffer + i) = '\n';
-			printf("return code 0");
+			printf("return code 0\n");
 			return 0;
 		}
 		
@@ -234,7 +236,8 @@ void *reading(void* parametre)
 {
 	struct fileinfo file;
 	struct fileinfo *fileptr = &file;
-	fileptr->fd = (int)*(parametre);
+	int *ptrfd = (int*)parametre;
+	fileptr->fd = *(ptrfd);
 	
 	if (fileptr->fd == 0)
 	{
@@ -277,6 +280,7 @@ void *reading(void* parametre)
 				i++;
 			}
 			*(biffer + i) = '\0';
+			printf("%c\n", *biffer);
 			printf("%s \n", biffer);
 		}
 		else if (readtest == -1 || readtest == 1)
