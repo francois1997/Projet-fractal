@@ -379,7 +379,7 @@ void fileopener(int filenumber, char ** filename, int *fd, int offset){
 
  int *threadcreate(pthread_t *threads, int fd[], int number){
 
-	int rendevous = 0;
+	int rendevous = number;
 	int test = 0;
 	int *para = (int *)malloc(sizeof(int)*number);
 	if (para == NULL)
@@ -395,12 +395,15 @@ void fileopener(int filenumber, char ** filename, int *fd, int offset){
 		{
 			*(para + i) = fd[i];
 			test = pthread_create((threads+i), NULL, &FractCreate, (void*)(para+i));
-			rendevous++; //mettre rendevous après le if ;) comme ca tu l'incremente puis tu le decremente pas si il y a une erreur
 			if (test != 0)
 			{
 				fprintf(stderr, "reading thread creation failed, thread number : %i \n", i);
 				rendevous--;
 			}
+		}
+		else if (fd[i] < 0)
+		{
+			rendevous--;
 		}
 	}
 	sem_init(&rdv1,0,rendevous);

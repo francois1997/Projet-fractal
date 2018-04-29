@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <sys/mman.h>
 #include <stdint.h>
+#include <string.h>
 
 
 #define SIZE_MAX 16777216
@@ -148,7 +149,7 @@ int firstlf(struct fileinfo *file)
  *  1 well it seems we are at the end of the file you should ignore what's in biffer
  *  2 we are at the end of the file too but this time you can use what's inside biffer
  */
-int read(struct fileinfo *file, char* biffer, int lenbiffer)
+int read2(struct fileinfo *file, char* biffer, int lenbiffer)
 {
 	int status = 0;
 	int t = 0;
@@ -176,7 +177,7 @@ int read(struct fileinfo *file, char* biffer, int lenbiffer)
 			{
 				return 1;
 			}
-			return read(file, biffer, lenbiffer);	
+			return read2(file, biffer, lenbiffer);	
 		}
 		else if (*((file->readhead)+j) != '\n' && (file->readsize)-j == 0) 										//arrived at the end of the memory map but not a the end of the line
 		{
@@ -220,7 +221,7 @@ int read(struct fileinfo *file, char* biffer, int lenbiffer)
 	} while (status);
 	
 	fprintf(stderr, "nothing happened, well that's an error\n");
-	fprintf(stderr, "error in read function\n");
+	fprintf(stderr, "error in read2 function\n");
 	return -1;
 }
  
@@ -232,6 +233,21 @@ void *reading(void* parametre)
 	struct fileinfo *fileptr = &file;
 	fileptr->fd = (int)*(parametre);
 	
+	if (fileptr->fd == 0)
+	{
+		//where the string read ont stream will be put and the length of that string
+		char **input = NULL;
+		size_t len = 0;
+		char *string = NULL;
+		getline(input, &len, 0);
+		string = *(input);
+		*(string + len-1) = '\0';
+		printf("%s\n", string);
+		free(string);
+		return NULL;
+	}
+	else if (fileptr->fd > 0)
+	{
 	struct stat buff;
 	struct stat *buffptr = &buff;
 	fstat(fileptr->fd, buffptr);
@@ -239,15 +255,60 @@ void *reading(void* parametre)
 	
 	fileptr->offset = 0;
 	fileptr->finished = 0;
+	int readtest = 0;
 	
 	char biffer[5*65];
 	int lenbiffer = 5*65;
 	
 	if (refresh(fileptr) == -1)
 	{
-		/*stop the reading thread*/
+		return NULL;
+	}
+	while (fileptr->finished == 0 || readtest == 0)
+		readtest = read2(fileptr, biffer, lenbiffer);
+		if (readtest == 0 || readtest == 2)
+		{
+			int i = 0;
+			while (*(biffer+i) != '\n')
+			{
+				i++;
+			}
+			*(biffer + i) = '\0';
+			printf("%s \n", biffer);
+		}
+		else if (readtest == -1 || readtest == 1)
+		{
+			return NULL;
+		}
+	}
+	return NULL;
+	
+	
+}
+
+
+int main(int argc, char *argv[]){
+	
+	if (argc < 2)
+	{
+		fprintf(stderr, "uses : a.out [File] [-]");
+		return -1;
+	}
+	int fd = 0;
+	int status = 0;
+	
+	for (int i = 0; i < argc-1; i++)
+	{
+		if (strcmp(argv[i+1], "-") == 0 && status == 0)
+		{
+			reading((void*)&fd);
+			status++;
+		}
+		fd = open (argv[i+1], O_RDONLY);
+		reading((void*)&fd);
 	}
 	
+	return 0;
 	
 	
 	
