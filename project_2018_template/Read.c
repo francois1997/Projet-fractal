@@ -184,6 +184,7 @@ int read2(struct fileinfo *file, char* biffer, int lenbiffer)
 			if (file->finished == 1)
 			{
 				printf("File finished fd :%d\n", file->fd);
+				printf("return code 1");
 				return 1;
 			}
 			if (refresh(file) == -1)
@@ -199,6 +200,7 @@ int read2(struct fileinfo *file, char* biffer, int lenbiffer)
 			if (file->finished == 1)
 			{
 				printf("File finished fd :%d\n", file->fd);
+				printf("return code 2");
 				*(biffer + i) = '\n';
 				return 2;
 			}
@@ -214,6 +216,7 @@ int read2(struct fileinfo *file, char* biffer, int lenbiffer)
 			file->readhead = file->readhead + j+1;
 			file->readsize = (file->readsize)-(j+1);
 			*(biffer + i) = '\n';
+			printf("return code 0");
 			return 0;
 		}
 		
@@ -278,9 +281,11 @@ void *reading(void* parametre)
 		}
 		else if (readtest == -1 || readtest == 1)
 		{
+			munmap(fileptr->msg, fileptr->memload);
 			return NULL;
 		}
 	}
+	munmap(fileptr->msg, fileptr->memload);
 	return NULL;
 	
 	
