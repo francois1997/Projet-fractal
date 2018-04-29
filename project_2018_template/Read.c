@@ -254,39 +254,41 @@ void *reading(void* parametre)
 	}
 	else if (fileptr->fd > 0)
 	{
-	struct stat buff;
-	struct stat *buffptr = &buff;
-	fstat(fileptr->fd, buffptr);
-	fileptr->sizefile = buffptr->st_size;
-	
-	fileptr->offset = 0;
-	fileptr->finished = 0;
-	int readtest = 0;
-	
-	char biffer[5*65];
-	int lenbiffer = 5*65;
-	
-	if (refresh(fileptr) == -1)
-	{
-		return NULL;
-	}
-	while (fileptr->finished == 0 || readtest == 0)
-		readtest = read2(fileptr, biffer, lenbiffer);
-		if (readtest == 0 || readtest == 2)
+		struct stat buff;
+		struct stat *buffptr = &buff;
+		fstat(fileptr->fd, buffptr);
+		fileptr->sizefile = buffptr->st_size;
+		
+		fileptr->offset = 0;
+		fileptr->finished = 0;
+		int readtest = 0;
+		
+		char biffer[5*65];
+		int lenbiffer = 5*65;
+		
+		if (refresh(fileptr) == -1)
 		{
-			int i = 0;
-			while (*(biffer+i) != '\n')
-			{
-				i++;
-			}
-			*(biffer + i) = '\0';
-			printf("%c\n", *biffer);
-			printf("%s \n", biffer);
-		}
-		else if (readtest == -1 || readtest == 1)
-		{
-			munmap(fileptr->msg, fileptr->memload);
 			return NULL;
+		}
+		while (fileptr->finished == 0 || readtest == 0)
+		{
+			readtest = read2(fileptr, biffer, lenbiffer);
+			if (readtest == 0 || readtest == 2)
+			{
+				int i = 0;
+				while (*(biffer+i) != '\n')
+				{
+					i++;
+				}
+				*(biffer + i) = '\0';
+				printf("%c\n", *biffer);
+				printf("%s \n", biffer);
+			}
+			else if (readtest == -1 || readtest == 1)
+			{
+				munmap(fileptr->msg, fileptr->memload);
+				return NULL;
+			}
 		}
 	}
 	munmap(fileptr->msg, fileptr->memload);
