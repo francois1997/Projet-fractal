@@ -9,59 +9,75 @@
 #include <stdbool.h>
 #include <limits.h>
 #include<stdint.h>
-
-//#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h>
 #include <SDL/SDL.h>
 
+///////////////////////////////////////////////////////////////////////
+/* Creation des structures necessaires au fonctionnement du programme*/
+///////////////////////////////////////////////////////////////////////
+
+// Cette structure permet de gerer le partage de memoire entre les producteurs-consommateurs
 struct buff{
     struct fractal **buf;          /* Buffer contenant toutes les fractals */
     int length;             /* Nombre de slots dans le buffer */
-    int begin;         /* buf[(begin+1)%n] est le premier �l�ment */
+    int begin;         /* buf[(begin+1)%n] est le premier element */
     int end;          /* buf[end%n] est le dernier */
-    pthread_mutex_t mutex;
+    pthread_mutex_t mutex; //empecher a deux producteurs ou consommateurs d'acceder au buffer
     sem_t empty;       /* Nombre de places libres */
     sem_t full;       /* Nombre d'items dans le buffer */
 };
 
+//Cette structure permet de stocker le nom des fractals lue dans les fichiers
 struct name{
   char* name;
   struct name *next;
 };
 
+//Cette structure permet l'acces au debut de la liste chainee des noms des fractals
 struct nameacceslist{
-  struct name *head;
+  struct name *head; //premier noeud
   sem_t acces;
 };
 
+//Structure contenant la tete de la liste chainee des threads
 struct listthread{
   struct thread *head;
   int numberthread;
 };
 
+//Liste chainee contenant les threads cree
 struct thread{
   pthread_t *thread;
   struct thread *next;
 };
 
+//Structure permettant de stocker les informations concernant la fractal de plus grande moyenne
 struct fractalHigh{
   int average;
   struct fractal *high;
   sem_t acces;
 };
 
+//Structure qui stocke le nombre de thread lisant les fichiers qui sont encore
+// en cours d'execution
 struct numberlecteur{
   int number;
   sem_t acces;
 };
 
+//Cette structure permet de stopper certaines categories de thread
+//Il y a :  - endoflecture qui specifie au producteur si les threads de lectures sont termines
+//          - endofproducteur qui specifie au consommateur si les threads de production sont termines
+//          - end qui specifie a tous les threads si il y a eu une erreur et leur indique donc
+//          qu'ils doivent se terminer
 struct programend{
   int value;
   sem_t acces;
 };
 
+//Declaration de toutes les fonctions
 void clean_all();
 int create_all(int etat);
 void printallname(struct nameacceslist *list);
@@ -93,6 +109,7 @@ void *producermoyenne(void *parametre);
 void *consumer(void *parametre);
 
 
+//Les variables sont declarees en variables global et sont mise a NULL
 int max_thread;
 struct buff *buffer = NULL;
 struct buff *listfractal = NULL;
@@ -107,93 +124,99 @@ struct listthread *producerthread = NULL;
 struct listthread *consumerthread = NULL;
 pthread_mutex_t verification;
 
+
+/*
+ * @pre
+ * @post
+ */
 int main(int argc, char *argv[])
 {
     int err;
-    if(argc <=1)
+    if(argc <=1) //Verification qu'il y ai au moins 2 arguments et donc un fichier au minimum a lire
     {
           //error(err,"not enouth arguments");
           return -1;
     }
-    if(strcmp(argv[1],"-d")==0)
+    if(strcmp(argv[1],"-d")==0) //Presence du parametre '-d' dans les arguments
     {
-        if(strcmp(argv[2],"--maxthreads")==0)
+        if(strcmp(argv[2],"--maxthreads")==0) //Presence du parametre '--maxthreads' dans les arguments
         {
             max_thread = atoi(argv[3]);
-            if(max_thread < 1)
+            if(max_thread < 1) //Verification de la validite du nombre de thread maximal
             {
                 printf("bad max_thread number");
-                //error(err,"bad max_thread number");
-                clean_all();
                 return -1;
             }
-            create_all(1);
+            create_all(1); //Initialisation de toutes les variables utilent au programme
             err = readfile(argc,argv,4,1);
             if(err == -1)
             {
                 printf("error during read file");
-                clean_all();
+                clean_all(); //free de toutes les variables cree par malloc
                 return -1;
             }
-            clean_all();
+            clean_all(); //free de toutes les variables cree par malloc
             return 0;
         }
-        else
+        else //Non presence du parametre '--maxthreads' dans les arguments
         {
             max_thread = -1; //Si pas de nombre maximum de thread
-            create_all(1);
+            create_all(1); //Initialisation de toutes les variables utilent au programme
             err = readfile(argc,argv,2,1);
             if(err == -1)
             {
                 printf("error during read file");
-                clean_all();
+                clean_all(); //free de toutes les variables cree par malloc
                 return -1;
             }
-            clean_all();
+            clean_all(); //free de toutes les variables cree par malloc
             return 0;
         }
     }
-    else
+    else //Non presence du parametre '-d' dans les arguments
     {
-        if(strcmp(argv[1],"--maxthreads")==0)
+        if(strcmp(argv[1],"--maxthreads")==0) //Presence du parametre '--maxthreads' dans les arguments
         {
             max_thread = atoi(argv[2]);
-            if(max_thread < 1)
+            if(max_thread < 1) //Verification de la validite du nombre de thread maximal
             {
                 printf("bad max thread number");
                 //error(err,"bad max_thread number");
-                clean_all();
                 return -1;
             }
-            create_all(2);
+            create_all(2); //Initialisation de toutes les variables utilent au programme
             err = readfile(argc,argv,3,2);
             if(err == -1)
             {
                 printf("error during read file");
-                clean_all();
+                clean_all(); //free de toutes les variables cree par malloc
                 return -1;
             }
-            clean_all();
+            clean_all(); //free de toutes les variables cree par malloc
             return 0;
         }
-        else
+        else //Non presence du parametre '--maxthreads' dans les arguments
         {
             max_thread = -1;
-            create_all(2);
+            create_all(2); //Initialisation de toutes les variables utilent au programme
             err = readfile(argc,argv,1,2);
             if(err == -1)
             {
                 printf("error during read file");
-                clean_all();
+                clean_all(); //free de toutes les variables cree par malloc
                 return -1;
             }
-            clean_all();
+            clean_all(); //free de toutes les variables cree par malloc
            return 0;
         }
     }
     return -1;
 }
 
+/*
+ * @pre
+ * @post
+ */
 void clean_all()
 {
   printf("Function clean all variables \n");
@@ -201,7 +224,7 @@ void clean_all()
   {
     if(high->high != NULL)
     {
-      removetolistname(fractal_get_name(high->high),accesname);
+      removetolistname(fractal_get_name(high->high),accesname);//on retire d'abord le nom de la liste de nom
       fractal_free(high->high);
     }
     free(high);
@@ -253,9 +276,13 @@ void clean_all()
   }
 }
 
+/*
+ * @pre
+ * @post
+ */
 int create_all(int etat)
 {
-  int err = 0;
+    int err = 0;
     listfractal = (struct buff *)malloc(sizeof(struct buff));
     if(listfractal == NULL)
     {
@@ -269,10 +296,6 @@ int create_all(int etat)
       free(listfractal);
       return -1;
     }
-
-
-
-
 
     accesname = (struct nameacceslist *)malloc(sizeof(struct nameacceslist));
     if(accesname == NULL)
@@ -291,9 +314,6 @@ int create_all(int etat)
       free(accesname);
       return -1;
     }
-
-
-
 
     end = (struct programend *)malloc(sizeof(struct programend));
     if(end == NULL)
@@ -316,7 +336,6 @@ int create_all(int etat)
       free(end);
       return -1;
     }
-
 
     otherfile = (struct numberlecteur * )malloc(sizeof(struct numberlecteur));
     if(otherfile == NULL)
@@ -343,8 +362,6 @@ int create_all(int etat)
       free(otherfile);
       return -1;
     }
-
-
 
     endoflecture = (struct programend *)malloc(sizeof(struct programend));
     if(endoflecture == NULL)
@@ -376,9 +393,6 @@ int create_all(int etat)
       return -1;
     }
 
-
-
-
     producerthread = (struct listthread *)malloc(sizeof(struct listthread));
     if(producerthread == NULL)
     {
@@ -398,7 +412,9 @@ int create_all(int etat)
     producerthread->head = NULL;
     producerthread->numberthread = 0;
 
-
+    ////////////////////////////////////////////////////////////////////
+    //Separtion des cas ou '-d' est present
+    ////////////////////////////////////////////////////////////////////
     if(etat == 1) //Option avec -d
     {
       buffer = (struct buff*)malloc(sizeof(struct buff));
@@ -444,9 +460,6 @@ int create_all(int etat)
           return -1;
       }
 
-
-
-
       otherproducteur = (struct numberlecteur * )malloc(sizeof(struct numberlecteur));
       if(otherproducteur == NULL)
       {
@@ -485,9 +498,6 @@ int create_all(int etat)
         return -1;
       }
 
-
-
-
       consumerthread = (struct listthread *)malloc(sizeof(struct listthread));
       if(consumerthread == NULL)
       {
@@ -510,7 +520,6 @@ int create_all(int etat)
       }
       consumerthread->head = NULL;
       consumerthread->numberthread = 0;
-
 
       endofproducteur = (struct programend *)malloc(sizeof(struct programend));
       if(endofproducteur == NULL)
@@ -596,7 +605,10 @@ int create_all(int etat)
     }
 }
 
-
+/*
+ * @pre
+ * @post
+ */
 void printallname(struct nameacceslist *list)
 {
   sem_wait(&(list->acces));
@@ -609,11 +621,14 @@ void printallname(struct nameacceslist *list)
   sem_post(&(list->acces));
 }
 
-//MALLOC : listname,listfractal(buffer), semaphore acces,
+/*
+ * @pre
+ * @post
+ */
 int readfile(int argc, char *argv[], int begin, int type)
 {
   int err = 0;
-  pthread_t lecteur[argc-begin];
+  pthread_t lecteur[argc-begin]; //tableau de thread de taille egal au nombre de fichier
   int trynumber = 0;
   int threadreaderfail = 0;
   for(int i = begin; (i < argc) && (isendofprogram(end) == 0);i++)
@@ -622,13 +637,14 @@ int readfile(int argc, char *argv[], int begin, int type)
     err = pthread_create(&lecteur[i-begin],NULL,(void *)&lecture,(void *)(*(argv+i)));
     if(err != 0)
     {
-      if(trynumber > 10)
+      if(trynumber > 10) //si pthread_create echoue, reessayer
       {
           threadreaderfail++;
-          if(threadreaderfail > argc-begin-1)
+          if(threadreaderfail > argc-begin-1) //si aucun thread de lecture n'a
+                                              //ete cree alors envoyer le message d'arret
           {
             printf("Error during reader thread creation \n");
-            setendofprogram(end);
+            setendofprogram(end); //met la valeur de la struture end à -1
             return -1;
           }
       }
@@ -643,7 +659,7 @@ int readfile(int argc, char *argv[], int begin, int type)
     (otherfile->number)++;
     sem_post(&(otherfile->acces));
   }
-  if(type == 1)
+  if(type == 1) // type 1 = avec parametre '-d'
   {
       err = thread_all();
       if(err == -1)
@@ -652,7 +668,7 @@ int readfile(int argc, char *argv[], int begin, int type)
           return -1;
       }
   }
-  else
+  else // type 2 = sans parametre '-d'
   {
       err = thread_moyenne();
       if(err == -1)
@@ -661,20 +677,23 @@ int readfile(int argc, char *argv[], int begin, int type)
           return -1;
       }
   }
+  //Recuperation des threads de lecture
   for(int i = begin; i < argc;i++)
   {
     err = pthread_join(lecteur[i-begin], NULL);
-    if(err!=0)
+    if(err!=0) //erreur lors d'un thread
     {
         printf("lecture pthread end with error");
         setendofprogram(end);
     }
   }
-  return isendofprogram(end);
+  return isendofprogram(end); //recupere la valeur de la structure end : 0 = pas d'erreur -1 = erreur
 }
 
-
-//MALLOC : fermer fichier file
+/*
+ * @pre
+ * @post
+ */
 void * lecture(void* parametre)
 {
 
@@ -789,9 +808,10 @@ void * lecture(void* parametre)
   }
 }
 
-
-
-//Malloc: fractal
+/*
+ * @pre
+ * @post
+ */
 struct fractal * split(char* line)
 {
    int i = 0;
@@ -848,15 +868,17 @@ struct fractal * split(char* line)
    }
 }
 
-
-
+/*
+ * @pre
+ * @post
+ */
 int verifyduplicatename(char* name, struct nameacceslist *list)
 {
   sem_wait(&(list->acces));
   struct name *current = list->head;
   while(current != NULL)
   {
-    if(strcmp((name),current->name)==0)
+    if(strcmp((name),current->name)==0) //si le nom de la nouvelle fractal existe deja
     {
       sem_post(&(list->acces));
       return -1;
@@ -864,11 +886,13 @@ int verifyduplicatename(char* name, struct nameacceslist *list)
     current = (current->next);
   }
   sem_post(&(list->acces));
-  return 0;
+  return 0; //le nom de la nouvelle fractal n'existe pas encore
 }
 
-
-// MALLOC : node,
+/*
+ * @pre
+ * @post
+ */
 int addtolistname(char* name, struct nameacceslist *list)
 {
   sem_wait(&(list->acces));
@@ -903,8 +927,10 @@ int addtolistname(char* name, struct nameacceslist *list)
   }
 }
 
-
-
+/*
+ * @pre
+ * @post
+ */
 int removetolistname(const char* name, struct nameacceslist *list)
 {
   sem_wait(&(list->acces));
@@ -951,6 +977,10 @@ int removetolistname(const char* name, struct nameacceslist *list)
   }
 }
 
+/*
+ * @pre
+ * @post
+ */
 void freelistname(struct nameacceslist *list)
 {
   struct name *head = list->head;
@@ -972,8 +1002,6 @@ void freelistname(struct nameacceslist *list)
   free(list);
 }
 
-
-
 /*
  * @pre buffer!=NULL, n>0
  * @post a construit un buffer partagé contenant n slots
@@ -982,7 +1010,7 @@ void freelistname(struct nameacceslist *list)
 int buf_init(struct buff *buf, int n)
 {
     int err;
-    buf->buf = (struct fractal **)malloc(sizeof(struct fractal*)*n);
+    buf->buf = (struct fractal **)malloc(sizeof(struct fractal*)*n); //cree un tableau de n slot
     if((buf->buf)==NULL)
     {
        return -1;
@@ -1044,6 +1072,25 @@ void buf_insert(struct buff *buffer, struct fractal *item)
     sem_post(&(buffer->full));
 }
 
+/* @pre buf!=NULL
+ * @post retire le dernier item du buffer partage
+ */
+struct fractal* buf_remove(struct buff *buffer)
+{
+    sem_wait(&(buffer->full));
+    pthread_mutex_lock(&buffer->mutex);
+    struct fractal *retour = ((buffer->buf)[(buffer->begin)+1]);
+    ((buffer->buf)[(buffer->begin)+1]) = NULL;
+    buffer->begin = (buffer->begin + 1)%(buffer->length);
+    pthread_mutex_unlock(&buffer->mutex);
+    sem_post(&(buffer->empty));
+    return retour;
+}
+
+/*
+ * @pre
+ * @post
+ */
 int buf_isempty(struct buff *buffer,struct fractal **f)
 {
   int err = 0;
@@ -1066,6 +1113,10 @@ int buf_isempty(struct buff *buffer,struct fractal **f)
   }
 }
 
+/*
+ * @pre
+ * @post
+ */
 void setendofprogram(struct programend *f)
 {
   sem_wait(&(f->acces));
@@ -1073,6 +1124,10 @@ void setendofprogram(struct programend *f)
   sem_post(&(f->acces));
 }
 
+/*
+ * @pre
+ * @post
+ */
 int isendofprogram(struct programend *f)
 {
   sem_wait(&(f->acces));
@@ -1081,6 +1136,10 @@ int isendofprogram(struct programend *f)
   return val;
 }
 
+/*
+ * @pre
+ * @post
+ */
 int verify_end(struct buff *buffer,struct fractal **f)
 {
   int val;
@@ -1102,6 +1161,10 @@ int verify_end(struct buff *buffer,struct fractal **f)
   }
 }
 
+/*
+ * @pre
+ * @post
+ */
 int verify_endproducteur(struct buff *buffer,struct fractal **f)
 {
   pthread_mutex_lock(&verification);
@@ -1137,6 +1200,10 @@ int verify_endproducteur(struct buff *buffer,struct fractal **f)
   }
 }
 
+/*
+ * @pre
+ * @post
+ */
 int fractalhighmodify(struct fractalHigh *f, struct fractal *frac, int average)
 {
   sem_wait(&(f->acces));
@@ -1159,6 +1226,10 @@ int fractalhighmodify(struct fractalHigh *f, struct fractal *frac, int average)
   }
 }
 
+/*
+ * @pre
+ * @post
+ */
 struct fractal *getfractalhigh(struct fractalHigh *f)
 {
   sem_wait(&(f->acces));
@@ -1167,22 +1238,10 @@ struct fractal *getfractalhigh(struct fractalHigh *f)
   return big;
 }
 
-
-/* @pre sbuf!=NULL
- * @post retire le dernier item du buffer partage
+/*
+ * @pre
+ * @post
  */
-struct fractal* buf_remove(struct buff *buffer)
-{
-    sem_wait(&(buffer->full));
-    pthread_mutex_lock(&buffer->mutex);
-    struct fractal *retour = ((buffer->buf)[(buffer->begin)+1]);
-    ((buffer->buf)[(buffer->begin)+1]) = NULL;
-    buffer->begin = (buffer->begin + 1)%(buffer->length);
-    pthread_mutex_unlock(&buffer->mutex);
-    sem_post(&(buffer->empty));
-    return retour;
-}
-
 void listthread_free(struct listthread *list)
 {
   struct thread *current = list->head;
@@ -1197,6 +1256,10 @@ void listthread_free(struct listthread *list)
   free(list);
 }
 
+/*
+ * @pre
+ * @post
+ */
 pthread_t *removethread(struct listthread *list)
 {
   if(list == NULL)
@@ -1215,6 +1278,10 @@ pthread_t *removethread(struct listthread *list)
   return retour;
 }
 
+/*
+ * @pre
+ * @post
+ */
 int insertthread(struct listthread *list,void* funct)
 {
   int err = 0;
@@ -1273,8 +1340,10 @@ int insertthread(struct listthread *list,void* funct)
   }
 }
 
-
-//MALLOC : buffer, buff_init
+/*
+ * @pre
+ * @post
+ */
 int thread_moyenne()
 {
     int err;
@@ -1345,8 +1414,10 @@ int thread_moyenne()
     }
 }
 
-
-//MALLOC : buffer, buff_init
+/*
+ * @pre
+ * @post
+ */
 int thread_all()
 {
     int err = 0;
@@ -1459,9 +1530,10 @@ int thread_all()
     return 0;
 }
 
-
-
-// Producteur
+/*
+ * @pre
+ * @post
+ */
 void *producer(void *parametre)
 {
   struct fractal *f;
@@ -1498,7 +1570,10 @@ void *producer(void *parametre)
   pthread_exit(NULL);
 }
 
-// Producteur
+/*
+ * @pre
+ * @post
+ */
 void *producermoyenne(void *parametre)
 {
   struct fractal *fractalhigh;
@@ -1538,9 +1613,10 @@ void *producermoyenne(void *parametre)
   pthread_exit(NULL);
 }
 
-
-
-// Consommateur
+/*
+ * @pre
+ * @post
+ */
 void *consumer(void *parametre)
 {
  struct fractal *fract = NULL;
