@@ -71,7 +71,7 @@ int refresh(struct fileinfo *file)
 			fprintf(stderr, "something went terribly wrong, unable to munmap\n");
 			return -1;
 		}
-		if (file->sizefile > SIZE_MAX)
+		if ((file->sizefile - file->offset) > SIZE_MAX)
 		{
 			file->msg = (long*)mmap(NULL, SIZE_MAX, PROT_READ, MAP_PRIVATE, file->fd, file->offset);
 			if (file->msg == MAP_FAILED)
@@ -85,7 +85,7 @@ int refresh(struct fileinfo *file)
 		}
 		else
 		{
-			file->msg = (long*)mmap(NULL, file->sizefile, PROT_READ, MAP_PRIVATE, file->fd, file->offset);
+			file->msg = (long*)mmap(NULL, (file->sizefile - file->offset), PROT_READ, MAP_PRIVATE, file->fd, file->offset);
 			if (file->msg == MAP_FAILED)
 			{
 				fprintf(stderr, "unable to map file fd :%d\n", file->fd);
