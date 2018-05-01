@@ -246,6 +246,7 @@ void *reading(void* parametre)
 		size_t len = 0;
 		char *string = NULL;
 		getline(input, &len, 0);
+		printf("thanks\n");
 		string = *(input);
 		*(string + len-1) = '\0';
 		printf("%s\n", string);
@@ -281,7 +282,6 @@ void *reading(void* parametre)
 					i++;
 				}
 				*(biffer + i) = '\0';
-				printf("%c\n", *biffer);
 				printf("%s \n", biffer);
 			}
 			else if (readtest == -1 || readtest == 1)
@@ -312,11 +312,15 @@ int main(int argc, char *argv[]){
 	{
 		if (strcmp(argv[i+1], "-") == 0 && status == 0)
 		{
+			printf("please enter what you want :\n");
 			reading((void*)&fd);
 			status++;
 		}
 		fd = open (argv[i+1], O_RDONLY);
-		reading((void*)&fd);
+		if (fd < 0)
+		{
+			reading((void*)&fd);
+		}
 	}
 	
 	return 0;
