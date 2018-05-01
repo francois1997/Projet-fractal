@@ -30,15 +30,15 @@ struct line *newline(struct line *lin, int lenmax)
 	int heigth = (rand()%heigthmax)+1;
 	char wid[5];
 	char hei[5];
-	sprintf(wid,%d,width);
-	sprintf(hei,%d,hei);
+	sprintf(wid,"%d",width);
+	sprintf(hei,"%d",hei);
 	*((lin->phrase)+len) = ' ';
 	len++;
 	int i = 0;
 	while(wid[i] != '\0')
 	{
 		*((lin->phrase)+len+i) = wid[i];
-		i++
+		i++;
 	}
 	len = len + i;
 	i = 0;
@@ -47,7 +47,7 @@ struct line *newline(struct line *lin, int lenmax)
 	while(hei[i] != '\0')
 	{
 		*((lin->phrase)+len+i) = hei[i];
-		i++
+		i++;
 	}
 	len = len + i;
 	*((lin->phrase)+len) = ' ';
@@ -60,8 +60,8 @@ struct line *newline(struct line *lin, int lenmax)
 	double da = (((double)(rand() % 200))/100)-1;
 	double db = (((double)(rand() % 200))/100)-1;
 	printf("potential seg fault\n");
-	sprintf(a,%.2f,da);
-	sprintf(b,%.2f,db);
+	sprintf(a,"%.2f",da);
+	sprintf(b,"%.2f",db);
 	i=0;
 	while (a[i] != '\0')
 	{
@@ -129,7 +129,7 @@ int main(int argc, char *argv[]){
 	}
 	
 	char alinea[lenmax + 30];
-	newlie->phrase = alinea;
+	lieptr->phrase = alinea;
 	for (int i = 0; i < numfile; i++)
 	{
 		int fractnum = (rand()%fractmax)+1;
