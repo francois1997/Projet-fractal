@@ -134,6 +134,18 @@ pthread_mutex_t verification;
  */
 int main(int argc, char *argv[])
 {
+    
+   // pour faire planter le programme
+  /*
+  struct rlimit old, new;
+  struct rlimit *newp;
+  new.rlim_cur = 4194304;
+  new.rlim_max = 8388608;
+  newp = &new;
+  prlimit(0, RLIMIT_AS, newp, &old);
+  printf("maybe\n");
+  */
+    
     int err;
     if(argc <=1) //Verification qu'il y ai au moins 2 arguments et donc un fichier au minimum a lire
     {
@@ -239,7 +251,7 @@ void clean_all()
   if(listfractal != NULL)
   {
     buf_clean(listfractal);
-    free(listfractal);              //créée des erreurs
+    //free(listfractal);              //créée des erreurs
   }
   if(end != NULL)
   {
