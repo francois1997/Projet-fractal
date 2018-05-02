@@ -1,0 +1,6 @@
+Dans le fichier Main.c
+1. verifier ligne 241 pour le double free()
+2. mettre des if dans la fonction main autour des appels a create_all(), pour éviter de lancer read en cas d'échec
+3. changer le nom de la variable file dans la fonction read en filu pour éviter le conflit
+4. empecher la création de plus de 20 threads de calculs
+5. vérifier si les valeurs des fractals sont valides et dans le cas où elles ne le sont pas ignorer la ligne aux lieux d'arreter la lecture du fichier
