@@ -1979,7 +1979,6 @@ int read2(struct fileinfo *file, char* biffer, int lenbiffer)
 			j++;
 			i++;
 		}
-		printf("j :%d et i :%d\n", j, i);
 		if (i == lenbiffer) 																					//arrived at the end of the buffer
 		{
 			fprintf(stderr, "line too long for the biffer or the biffer too small\n");
@@ -2033,7 +2032,6 @@ int read2(struct fileinfo *file, char* biffer, int lenbiffer)
 			file->readhead = file->readhead + j+1;
 			file->readsize = (file->readsize)-(j+1);
 			*(biffer + i) = '\n';
-			printf("return code 0\n");
 			return 0;
 		}
 
