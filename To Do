@@ -8,3 +8,4 @@ Dans le fichier Main.c
 6.1 une solution est dans la fonction read quand newfract = NULL just skip et ne pas fermer le fichier
 7. Terminer le makefile
 8. Faire le CtestU et éventuellement comprendre comment sa fonctionne?
+9. ligne 991 dans la fonction spli changer numberarg < 6 en numberarg < 5
