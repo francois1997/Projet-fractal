@@ -14,6 +14,9 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <SDL/SDL.h>
+#include <sys/mman.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #define SIZE_MAX 16777216
 
@@ -99,8 +102,9 @@ struct fileinfo {
 	unsigned long sizefile;
 	int fd;
 	uint8_t finished;
-	
+
 };
+
 
 //Declaration de toutes les fonctions
 void clean_all();
@@ -159,6 +163,19 @@ pthread_mutex_t verification;
  */
 int main(int argc, char *argv[])
 {
+
+  // pour faire planter le programme
+  /*
+  struct rlimit old, new;
+  struct rlimit *newp;
+  new.rlim_cur = 4194304;
+  new.rlim_max = 8388608;
+  newp = &new;
+  prlimit(0, RLIMIT_AS, newp, &old);
+  printf("maybe\n");
+  */
+
+
     int err;
     if(argc <=1) //Verification qu'il y ai au moins 2 arguments et donc un fichier au minimum a lire
     {
@@ -226,7 +243,7 @@ int main(int argc, char *argv[])
         else //Non presence du parametre '--maxthreads' dans les arguments
         {
             max_thread = -1;
-            create_all(2); //Initialisation de toutes les variables utilent au programme
+            create_all(2) != 0  //Initialisation de toutes les variables utilent au programme
             err = readfile(argc,argv,1,2);
             if(err == -1)
             {
@@ -264,7 +281,7 @@ void clean_all()
   if(listfractal != NULL)
   {
     buf_clean(listfractal);
-    free(listfractal);
+    //free(listfractal);
   }
   if(end != NULL)
   {
@@ -631,6 +648,7 @@ int create_all(int etat)
         return -1;
       }
     }
+    return 0;
 }
 
 /*
@@ -722,8 +740,8 @@ int readfile(int argc, char *argv[], int begin, int type)
  * @pre
  * @post
  */
- 
- /*
+
+
  void * lecture(void* parametre)
  {
 	printf("Lecture du fichier : %s \n",(char *)parametre);
@@ -740,18 +758,18 @@ int readfile(int argc, char *argv[], int begin, int type)
 	}
 	else
 	{
-		struct fileinfo file;
-		struct fileinfo *fileptr = &file;
+		struct fileinfo filu;
+		struct fileinfo *fileptr = &filu;
 		fileptr->fd = file;
 		struct stat buff;
 		struct stat *buffptr = &buff;
 		fstat(fileptr->fd, buffptr);
 		fileptr->sizefile = buffptr->st_size;
-		
+
 		fileptr->offset = 0;
 		fileptr->finished = 0;
 		int readtest = 0;
-		
+
 		char biffer[5*65];
 		int lenbiffer = 5*65;
 		if (refresh(fileptr) == -1)
@@ -822,12 +840,12 @@ int readfile(int argc, char *argv[], int begin, int type)
 				(otherfile->number)--;
 				sem_post(&(otherfile->acces));
 				pthread_exit(NULL);
-				
+
 			}
 		}
-		
-		
-		
+
+
+
 		if(close(file)==-1)
 		{
 			printf("error during file closing : %s",filename);
@@ -839,8 +857,8 @@ int readfile(int argc, char *argv[], int begin, int type)
 		pthread_exit(NULL);
 	}
  }
- */
- 
+
+/*
 void * lecture(void* parametre)
 {
 
@@ -955,6 +973,8 @@ void * lecture(void* parametre)
     pthread_exit(NULL);
   }
 }
+*/
+
 
 /*
  * @pre
@@ -1881,7 +1901,7 @@ int firstlf(struct fileinfo *file)
 	{
 		i++;
 	}
-	if ( *((file->readhead)+i) != '\n' && (file->readsize)-i == 0)							//arrived at the end of the memory map but not at the end of the line		
+	if ( *((file->readhead)+i) != '\n' && (file->readsize)-i == 0)							//arrived at the end of the memory map but not at the end of the line
 	{
 		if (file->finished == 1)
 		{
@@ -1915,18 +1935,18 @@ int firstlf(struct fileinfo *file)
 		file->readsize = file->readsize - (i+1);
 		return 0;
 	}
-	
-	
+
+
 	fprintf(stderr, "nothing happened, well that's an error\n");
 	fprintf(stderr, "error in firstlf function\n");
 	return -1;
 }
 
 /*	this function reads int the memory map and fill the buffer with the first valid line found
- *	
+ *
  *	it accept a fileinfo struct, a buffer and it's length
  *
- *	it returns an int, 
+ *	it returns an int,
  *	0 everything's good you can use the buffer and recall this function
  *  -1 huho there's a big error you should stop the the calling thread
  *  1 well it seems we are at the end of the file you should ignore what's in biffer
@@ -1974,7 +1994,7 @@ int read2(struct fileinfo *file, char* biffer, int lenbiffer)
 			{
 				return 1;
 			}
-			return read2(file, biffer, lenbiffer);	
+			return read2(file, biffer, lenbiffer);
 		}
 		else if (*((file->readhead)+j) != '\n' && (file->readsize)-j == 0) 										//arrived at the end of the memory map but not a the end of the line
 		{
@@ -2016,10 +2036,10 @@ int read2(struct fileinfo *file, char* biffer, int lenbiffer)
 			printf("return code 0\n");
 			return 0;
 		}
-		
-			
+
+
 	} while (status);
-	
+
 	fprintf(stderr, "nothing happened, well that's an error\n");
 	fprintf(stderr, "error in read2 function\n");
 	return -1;
