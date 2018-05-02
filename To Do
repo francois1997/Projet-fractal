@@ -4,3 +4,4 @@ Dans le fichier Main.c
 3. changer le nom de la variable file dans la fonction read en filu pour éviter le conflit
 4. empecher la création de plus de 20 threads de calculs
 5. vérifier si les valeurs des fractals sont valides et dans le cas où elles ne le sont pas ignorer la ligne aux lieux d'arreter la lecture du fichier
+6. quand je met absolument n'importe quoi dans les fichiers juste skipper les lignes et pas floating point exception
