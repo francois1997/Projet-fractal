@@ -239,7 +239,7 @@ void clean_all()
   if(listfractal != NULL)
   {
     buf_clean(listfractal);
-    free(listfractal);
+    free(listfractal);              //créée des erreurs
   }
   if(end != NULL)
   {
