@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
         else //Non presence du parametre '--maxthreads' dans les arguments
         {
             max_thread = -1;
-            create_all(2) != 0  //Initialisation de toutes les variables utilent au programme
+            create_all(2) != 0;  //Initialisation de toutes les variables utilent au programme
             err = readfile(argc,argv,1,2);
             if(err == -1)
             {
@@ -791,16 +791,7 @@ int readfile(int argc, char *argv[], int begin, int type)
 				struct fractal *newfract = split(biffer);
 				if(newfract == NULL)
 				{
-					if(close(file)==-1)
-					{
-						printf("error during file closing : %s",filename);
-					}
-					printf("fail during fractal build");
-					munmap(fileptr->msg, fileptr->memload);
-					sem_wait(&(otherfile->acces));
-					(otherfile->number)--;
-					sem_post(&(otherfile->acces));
-					pthread_exit(NULL);
+				      printf("unable to create a fractal\n");
 				}
 				else
 				{
@@ -1027,8 +1018,12 @@ struct fractal * split(char* line)
      double a = atof(*(splitedline+3));
      double b = atof(*(splitedline+4));
      //struct fractal *newfract;// = fractal_new(name, width, height, a, b);
-     struct fractal* newfract = fractal_new(name, width, height, a, b);
-     return newfract;
+     if (width != 0 && height != 0)
+     {
+       struct fractal* newfract = fractal_new(name, width, height, a, b);
+       return newfract;
+     }
+     return NULL;
    }
    else
    {
