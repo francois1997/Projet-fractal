@@ -8,14 +8,17 @@
 #include <semaphore.h>
 #include <stdbool.h>
 #include <limits.h>
-#include<stdint.h>
+#include <string.h>
+#include <stdint.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h>
 #include <SDL/SDL.h>
+#include <sys/mman.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
-#define BITMAP_ALL 1
-#define BITMAP_AVERAGE 2
+#define SIZE_MAX 16777216
 
 ///////////////////////////////////////////////////////////////////////
 /* Creation des structures necessaires au fonctionnement du programme*/
@@ -80,6 +83,29 @@ struct programend{
   sem_t acces;
 };
 
+/*	La structure fileinfo permet de stocker les données d'un fichier dans la mémoire, toute les informations nescessaire sont présente :
+ *	*msg 		: pointeur qui pointent toujour vers le debut de la zone memoire
+ *	*readhead 	: pointeur qui est uttilisé pour la lecture dans la zone memoire
+ *	readsize 	: long qui decrit combien de charactere reste apres readhead, il sert a éviter les segfault
+ *	memload 	: long qui decrit quelle taille la memoire prend, est utile pour munmap
+ *	offset 		: long qui decrit ou est la fin de la zone memoire par rapport aux debut du fichier
+ *	sizefile 	: long qui decrit la taille du fichier
+ *	fd 			: file descriptor du fichier
+ *	finished 	: int qui decrit si la zone memoire reouvre la fin du fichier ou pas
+ */
+struct fileinfo {
+	long *msg;
+	const char *readhead;
+	long readsize;
+	long memload;
+	unsigned long offset;
+	unsigned long sizefile;
+	int fd;
+	uint8_t finished;
+
+};
+
+
 //Declaration de toutes les fonctions
 void clean_all();
 int create_all(int etat);
@@ -110,6 +136,9 @@ int thread_all();
 void *producer(void *parametre);
 void *producermoyenne(void *parametre);
 void *consumer(void *parametre);
+int refresh(struct fileinfo *file);
+int firstlf(struct fileinfo *file);
+int read2(struct fileinfo *file, char* biffer, int lenbiffer);
 
 
 //Les variables sont declarees en variables global et sont mise a NULL
@@ -134,8 +163,8 @@ pthread_mutex_t verification;
  */
 int main(int argc, char *argv[])
 {
-    
-   // pour faire planter le programme
+
+  // pour faire planter le programme
   /*
   struct rlimit old, new;
   struct rlimit *newp;
@@ -145,7 +174,8 @@ int main(int argc, char *argv[])
   prlimit(0, RLIMIT_AS, newp, &old);
   printf("maybe\n");
   */
-    
+
+
     int err;
     if(argc <=1) //Verification qu'il y ai au moins 2 arguments et donc un fichier au minimum a lire
     {
@@ -162,7 +192,7 @@ int main(int argc, char *argv[])
                 printf("bad max_thread number");
                 return -1;
             }
-            create_all(BITMAP_ALL); //Initialisation de toutes les variables utilent au programme
+            create_all(1); //Initialisation de toutes les variables utilent au programme
             err = readfile(argc,argv,4,1);
             if(err == -1)
             {
@@ -176,7 +206,7 @@ int main(int argc, char *argv[])
         else //Non presence du parametre '--maxthreads' dans les arguments
         {
             max_thread = -1; //Si pas de nombre maximum de thread
-            create_all(BITMAP_ALL); //Initialisation de toutes les variables utilent au programme
+            create_all(1); //Initialisation de toutes les variables utilent au programme
             err = readfile(argc,argv,2,1);
             if(err == -1)
             {
@@ -199,7 +229,7 @@ int main(int argc, char *argv[])
                 //error(err,"bad max_thread number");
                 return -1;
             }
-            create_all(BITMAP_AVERAGE); //Initialisation de toutes les variables utilent au programme
+            create_all(2); //Initialisation de toutes les variables utilent au programme
             err = readfile(argc,argv,3,2);
             if(err == -1)
             {
@@ -213,7 +243,7 @@ int main(int argc, char *argv[])
         else //Non presence du parametre '--maxthreads' dans les arguments
         {
             max_thread = -1;
-            create_all(BITMAP_AVERAGE); //Initialisation de toutes les variables utilent au programme
+            create_all(2) != 0;  //Initialisation de toutes les variables utilent au programme
             err = readfile(argc,argv,1,2);
             if(err == -1)
             {
@@ -229,8 +259,8 @@ int main(int argc, char *argv[])
 }
 
 /*
- * @pre /
- * @post Toutes les variables crees par malloc ont ete correctement supprime
+ * @pre
+ * @post
  */
 void clean_all()
 {
@@ -251,7 +281,7 @@ void clean_all()
   if(listfractal != NULL)
   {
     buf_clean(listfractal);
-    //free(listfractal);              //créée des erreurs
+    //free(listfractal);
   }
   if(end != NULL)
   {
@@ -292,8 +322,8 @@ void clean_all()
 }
 
 /*
- * @pre etat == 1 || etat == 2
- * @post Toutes les variables fixes necessaires au programme ont ete cree
+ * @pre
+ * @post
  */
 int create_all(int etat)
 {
@@ -430,7 +460,7 @@ int create_all(int etat)
     ////////////////////////////////////////////////////////////////////
     //Separtion des cas ou '-d' est present
     ////////////////////////////////////////////////////////////////////
-    if(etat == BITMAP_ALL) //Option avec -d
+    if(etat == 1) //Option avec -d
     {
       buffer = (struct buff*)malloc(sizeof(struct buff));
       if(buffer == NULL)
@@ -618,6 +648,7 @@ int create_all(int etat)
         return -1;
       }
     }
+    return 0;
 }
 
 /*
@@ -637,10 +668,8 @@ void printallname(struct nameacceslist *list)
 }
 
 /*
- * @pre argc > 1 && argv !=NULL && begin >1 && (type==1 || type ==2)
- * @post Les fichiers passe en arguments ont ete lu et ferme correctement
- * ERREUR : 0 = lecture de tous les fichiers effectue correctement
- *         -1 = erreur
+ * @pre
+ * @post
  */
 int readfile(int argc, char *argv[], int begin, int type)
 {
@@ -676,7 +705,7 @@ int readfile(int argc, char *argv[], int begin, int type)
     (otherfile->number)++;
     sem_post(&(otherfile->acces));
   }
-  if(type == BITMAP_ALL) // type 1 = avec parametre '-d'
+  if(type == 1) // type 1 = avec parametre '-d'
   {
       err = thread_all();
       if(err == -1)
@@ -711,6 +740,116 @@ int readfile(int argc, char *argv[], int begin, int type)
  * @pre
  * @post
  */
+
+
+ void * lecture(void* parametre)
+ {
+	printf("Lecture du fichier : %s \n",(char *)parametre);
+	int err=0;
+	char* filename = (char *)parametre;
+	int file = open(filename,O_RDONLY);
+	if(file==-1)
+	{
+		printf("error during file opening : %s",filename);
+		sem_wait(&(otherfile->acces));
+		(otherfile->number)--;
+		sem_post(&(otherfile->acces));
+		pthread_exit(NULL);
+	}
+	else
+	{
+		struct fileinfo filu;
+		struct fileinfo *fileptr = &filu;
+		fileptr->fd = file;
+		struct stat buff;
+		struct stat *buffptr = &buff;
+		fstat(fileptr->fd, buffptr);
+		fileptr->sizefile = buffptr->st_size;
+
+		fileptr->offset = 0;
+		fileptr->finished = 0;
+		int readtest = 0;
+
+		char biffer[5*65];
+		int lenbiffer = 5*65;
+		if (refresh(fileptr) == -1)
+		{
+			if(close(file)==-1)
+			{
+				printf("error during file closing : %s",filename);
+			}
+			sem_wait(&(otherfile->acces));
+			(otherfile->number)--;
+			sem_post(&(otherfile->acces));
+			pthread_exit(NULL);
+		}
+		while (fileptr->finished == 0 || readtest == 0)
+		{
+			readtest = read2(fileptr, biffer, lenbiffer);
+			if (readtest == 0 || readtest == 2)
+			{
+				struct fractal *newfract = split(biffer);
+				if(newfract == NULL)
+				{
+				      printf("unable to create a fractal\n");
+				}
+				else
+				{
+					if(verifyduplicatename(newfract->name,accesname)==0)
+					{
+						buf_insert(listfractal, newfract);
+						err = addtolistname(newfract->name,accesname);
+						if(err != 0)
+						{
+							if(close(file)==-1)
+							{
+								printf("error during file closing : %s",filename);
+							}
+							printf("fail during add name to list");
+							munmap(fileptr->msg, fileptr->memload);
+							sem_wait(&(otherfile->acces));
+							(otherfile->number)--;
+							sem_post(&(otherfile->acces));
+							pthread_exit(NULL);
+						}
+					}
+					else
+					{
+						fractal_free(newfract);
+					}
+				}
+			}
+			else if (readtest == -1 || readtest == 1)
+			{
+				if(close(file)==-1)
+				{
+					printf("error during file closing : %s",filename);
+				}
+				printf("file finished\n");
+				munmap(fileptr->msg, fileptr->memload);
+				sem_wait(&(otherfile->acces));
+				(otherfile->number)--;
+				sem_post(&(otherfile->acces));
+				pthread_exit(NULL);
+
+			}
+		}
+
+
+
+		if(close(file)==-1)
+		{
+			printf("error during file closing : %s",filename);
+		}
+		munmap(fileptr->msg, fileptr->memload);
+		sem_wait(&(otherfile->acces));
+		(otherfile->number)--;
+		sem_post(&(otherfile->acces));
+		pthread_exit(NULL);
+	}
+ }
+
+/*
 void * lecture(void* parametre)
 {
 
@@ -742,6 +881,7 @@ void * lecture(void* parametre)
           if(close(file)==-1)
           {
                   printf("error during file closing : %s",filename);
+				  //code recurant
                   sem_wait(&(otherfile->acces));
                   (otherfile->number)--;
                   sem_post(&(otherfile->acces));
@@ -824,11 +964,12 @@ void * lecture(void* parametre)
     pthread_exit(NULL);
   }
 }
+*/
+
 
 /*
- * @pre line != NULL
- * @post Cree une structure fractal dont les parametres sont contenu dans la chaine de caracter "line"
- * ERREUR retour NULL si line ne contient pas les informations correspondant a une fractal
+ * @pre
+ * @post
  */
 struct fractal * split(char* line)
 {
@@ -847,7 +988,7 @@ struct fractal * split(char* line)
    *(splitedline + 2) = ligne3;
    *(splitedline + 3) = ligne4;
    *(splitedline + 4) = ligne5;
-   while(*(line+i) != '\n' && numberarg < 6 && position<65)
+   while(*(line+i) != '\n' && numberarg < 5 && position<65)
    {
      if(*(line+i) == ' ')
      {
@@ -864,25 +1005,25 @@ struct fractal * split(char* line)
      i++;
    }
 
-   if(position == 65)
-   {
-     return NULL; //trop de caractere
-   }
-
    if(*(line+i) == '\n')
    {
      *((*(splitedline+place))+position) = '\0';
      numberarg++;
    }
-   if(numberarg==5) //Verifie si la ligne contient le bon nombre de parametre pour une fractal
+   if(numberarg==5)
    {
      const char* name = *splitedline;
      int width = atoi(*(splitedline+1));
      int height = atoi(*(splitedline+2));
      double a = atof(*(splitedline+3));
      double b = atof(*(splitedline+4));
-     struct fractal* newfract = fractal_new(name, width, height, a, b);
-     return newfract;
+     //struct fractal *newfract;// = fractal_new(name, width, height, a, b);
+     if (width != 0 && height != 0)
+     {
+       struct fractal* newfract = fractal_new(name, width, height, a, b);
+       return newfract;
+     }
+     return NULL;
    }
    else
    {
@@ -891,19 +1032,11 @@ struct fractal * split(char* line)
 }
 
 /*
- * @pre name != NULL &&  list != NULL
- * @post Verifie si le nom de la fractal se trouve dans la liste chainee
- *       0 = n'existe pas encore
- *      -1 = existe déjà
+ * @pre
+ * @post
  */
 int verifyduplicatename(char* name, struct nameacceslist *list)
 {
-  if(list == NULL)
-  {
-    setendofprogram(end);
-    printf("Listname doesn't exist");
-    return -1;
-  }
   sem_wait(&(list->acces));
   struct name *current = list->head;
   while(current != NULL)
@@ -920,20 +1053,11 @@ int verifyduplicatename(char* name, struct nameacceslist *list)
 }
 
 /*
- * @pre name != NULL && list != NULL
- * @post le nom a ete ajoute a la fin de la liste chainee
+ * @pre
+ * @post
  */
 int addtolistname(char* name, struct nameacceslist *list)
 {
-  if(name == NULL)
-  {
-    return -1;
-  }
-  if(list == NULL)
-  {
-    setendofprogram(end);
-    return -1;
-  }
   sem_wait(&(list->acces));
   struct name *current = list->head;
   if(current == NULL)
@@ -967,18 +1091,11 @@ int addtolistname(char* name, struct nameacceslist *list)
 }
 
 /*
- * @pre name != NULL && list != NULL
- * @post Le noeud correspondant au nom a ete retire de la liste chainee si elle s'y trouvait
- * Retour 0 si supprime correctement
- *       -1 en cas d'erreur ou si le nom ne s'y trouvait pas
+ * @pre
+ * @post
  */
 int removetolistname(const char* name, struct nameacceslist *list)
 {
-  if(list == NULL)
-  {
-    setendofprogram(end);
-    return -1;
-  }
   sem_wait(&(list->acces));
   struct name *current = list->head;
   if(current == NULL)
@@ -1024,15 +1141,11 @@ int removetolistname(const char* name, struct nameacceslist *list)
 }
 
 /*
- * @pre list != NULL
- * @post Supprime tous les noeuds de la liste chainee
+ * @pre
+ * @post
  */
 void freelistname(struct nameacceslist *list)
 {
-  if(list != NULL)
-  {
-    return;
-  }
   struct name *head = list->head;
   if(head!=NULL)
   {
@@ -1053,8 +1166,9 @@ void freelistname(struct nameacceslist *list)
 }
 
 /*
- * @pre buff!=NULL, n>0
+ * @pre buffer!=NULL, n>0
  * @post a construit un buffer partagé contenant n slots
+ * MALLOC : buf, (empty, full)->semaphore
  */
 int buf_init(struct buff *buf, int n)
 {
@@ -1404,7 +1518,7 @@ int thread_moyenne()
       return -1;
     }
     fractalhighmodify(high,NULL,INT_MIN);
-    for(int i=0;((i<max_thread || max_thread < 0) && (isendofprogram(endoflecture)==0) && (isendofprogram(end) == 0));i++) {
+    for(int i=0;((i<max_thread || max_thread < 0) && i < 15 && (isendofprogram(endoflecture)==0) && (isendofprogram(end) == 0));i++) {
         err=insertthread(producerthread,(void*)&producermoyenne);
         if(err!=0)
         {
@@ -1477,7 +1591,7 @@ int thread_all()
     int j =0; //pour les consommateurs
     while((arret == 0 )&& (isendofprogram(end)== 0))
     {
-      if((i<max_thread || max_thread < 0) && i<100 && (isendofprogram(endoflecture)==0)  && (isendofprogram(end)==0))
+      if(i < 15 && (i<max_thread || max_thread < 0) && (isendofprogram(endoflecture)==0) && (isendofprogram(end)==0))
       {
         err=insertthread(producerthread,(void*)&producer);
         if(err!=0)
@@ -1493,7 +1607,7 @@ int thread_all()
           i++;
         }
       }
-      if((j<20 && j<numberproducteur+1 && (isendofprogram(endofproducteur)==0)) || j<1)
+      if(j<20 && (isendofprogram(endofproducteur)==0) && (isendofprogram(end)==0))
       {
         err = sem_trywait(&(buffer->full));
         if(err != 0)
@@ -1684,4 +1798,242 @@ void *consumer(void *parametre)
    }
  }
  pthread_exit(NULL);
+}
+
+/*	the refresh function loads part/whole file in memory depending on the file size
+ *	it does so by modifying the fileinfo structure
+ *
+ *	it accept a fileinfo structure only
+ *
+ *	it return an int,
+ *	return 0 when succsesful
+ *	return -1 when failed
+ */
+
+
+int refresh(struct fileinfo *file)
+{
+	if (file->offset == 0)
+	{
+		if (file->sizefile > SIZE_MAX)
+		{
+			file->msg = (long*)mmap(NULL, SIZE_MAX, PROT_READ, MAP_PRIVATE, file->fd, file->offset);
+			if (file->msg == MAP_FAILED)
+			{
+				fprintf(stderr, "unable to map file fd :%d\n", file->fd);
+				return -1;
+			}
+			file->offset = file->offset + SIZE_MAX;
+			file->memload = SIZE_MAX;
+			file->readsize = SIZE_MAX;
+		}
+		else
+		{
+			file->msg = (long*)mmap(NULL, file->sizefile, PROT_READ, MAP_PRIVATE, file->fd, file->offset);
+			if (file->msg == MAP_FAILED)
+			{
+				fprintf(stderr, "unable to map file fd :%d\n", file->fd);
+				return -1;
+			}
+			file->memload = file->sizefile;
+			file->readsize = file->sizefile;
+			file->finished = 1;
+		}
+		file->readhead = (char*)file->msg;
+	}
+	else
+	{
+		if (munmap(file->msg, file->memload) == -1)
+		{
+			fprintf(stderr, "something went terribly wrong, unable to munmap\n");
+			return -1;
+		}
+		if ((file->sizefile - file->offset) > SIZE_MAX)
+		{
+			file->msg = (long*)mmap(NULL, SIZE_MAX, PROT_READ, MAP_PRIVATE, file->fd, file->offset);
+			if (file->msg == MAP_FAILED)
+			{
+				fprintf(stderr, "unable to map file fd :%d\n", file->fd);
+				return -1;
+			}
+			file->offset = file->offset + SIZE_MAX;
+			file->memload = SIZE_MAX;
+			file->readsize = SIZE_MAX;
+		}
+		else
+		{
+			file->msg = (long*)mmap(NULL, (file->sizefile - file->offset), PROT_READ, MAP_PRIVATE, file->fd, file->offset);
+			if (file->msg == MAP_FAILED)
+			{
+				fprintf(stderr, "unable to map file fd :%d\n", file->fd);
+				return -1;
+			}
+			file->memload = file->sizefile;
+			file->readsize = file->sizefile;
+			file->finished = 1;
+		}
+		file->readhead = (char*)file->msg;
+	}
+	return 0;
+}
+
+
+/*	this function search for the first linefeed found inside memory, it handles the different cases
+ *
+ *	it accept a fileinfo structure only
+ *
+ *	it returns a int different in each case,
+ *	return 0 if everything went correctly
+ *	return 1 if we arrived at the end of the file
+ *	return -1 in case of error
+ */
+
+
+int firstlf(struct fileinfo *file)
+{
+	int i = 0;
+	while ( *((file->readhead)+i) != '\n' && (file->readsize)-i != 0)
+	{
+		i++;
+	}
+	if ( *((file->readhead)+i) != '\n' && (file->readsize)-i == 0)							//arrived at the end of the memory map but not at the end of the line
+	{
+		if (file->finished == 1)
+		{
+			printf("File finished fd :%d\n", file->fd);
+			return 1;
+		}
+		if (refresh(file) == -1)
+		{
+			fprintf(stderr, "error on refresh\n");
+			return -1;
+		}
+		return firstlf(file);
+	}
+	else if ( *((file->readhead)+i) == '\n' && (file->readsize)-i == 0)						//arrived at the end of the memory map and at the end of the line
+	{
+		if (file->finished == 1)
+		{
+			printf("File finished fd :%d\n", file->fd);
+			return 1;
+		}
+		if (refresh(file) == -1)
+		{
+			fprintf(stderr, "error on refresh\n");
+			return -1;
+		}
+		return 0;
+	}
+	else if (*((file->readhead)+i) == '\n' && (file->readsize)-i != 0)						//arrived at the end of line but not at the end of the memory map
+	{
+		file->readhead = file->readhead + i + 1;
+		file->readsize = file->readsize - (i+1);
+		return 0;
+	}
+
+
+	fprintf(stderr, "nothing happened, well that's an error\n");
+	fprintf(stderr, "error in firstlf function\n");
+	return -1;
+}
+
+/*	this function reads int the memory map and fill the buffer with the first valid line found
+ *
+ *	it accept a fileinfo struct, a buffer and it's length
+ *
+ *	it returns an int,
+ *	0 everything's good you can use the buffer and recall this function
+ *  -1 huho there's a big error you should stop the the calling thread
+ *  1 well it seems we are at the end of the file you should ignore what's in biffer
+ *  2 we are at the end of the file too but this time you can use what's inside biffer
+ */
+int read2(struct fileinfo *file, char* biffer, int lenbiffer)
+{
+	int status = 0;
+	int t = 0;
+	int i = 0;
+	int j = 0;
+	if (*(file->readhead) == ' ' || *(file->readhead) == '#')
+	{
+		t = firstlf(file);
+		if (t == 1)
+		{
+			return 1;
+		}
+		else if (t == -1)
+		{
+			return -1;
+		}
+		return read2(file, biffer, lenbiffer);
+	}
+	do
+	{
+		while ( *((file->readhead)+j) != '\n' && (file->readsize)-j != 0 && i < lenbiffer)
+		{
+			*(biffer + i) = *((file->readhead)+j);
+			j++;
+			i++;
+		}
+		if (i == lenbiffer) 																					//arrived at the end of the buffer
+		{
+			fprintf(stderr, "line too long for the biffer or the biffer too small\n");
+			fprintf(stderr, "line skipped\n");
+			t = firstlf(file);
+			if (t == -1)
+			{
+				fprintf(stderr, "error in firstlf function\n");
+				return -1;
+			}
+			if (t == 1)
+			{
+				return 1;
+			}
+			return read2(file, biffer, lenbiffer);
+		}
+		else if (*((file->readhead)+j) != '\n' && (file->readsize)-j == 0) 										//arrived at the end of the memory map but not a the end of the line
+		{
+			if (file->finished == 1)
+			{
+				printf("File finished fd :%d\n", file->fd);
+				printf("return code 1\n");
+				return 1;
+			}
+			if (refresh(file) == -1)
+			{
+				fprintf(stderr, "error on refresh\n");
+				return -1;
+			}
+			j = 0;
+			status = 1;
+		}
+		else if (*((file->readhead)+j) == '\n' && (file->readsize)-j == 0)										//arrived at the end of the memory map and at the end of the line
+		{
+			if (file->finished == 1)
+			{
+				printf("File finished fd :%d\n", file->fd);
+				printf("return code 2\n");
+				*(biffer + i) = '\n';
+				return 2;
+			}
+			if (refresh(file) == -1)
+			{
+				fprintf(stderr, "error on refresh\n");
+				return -1;
+			}
+			return 0;
+		}
+		else if (*((file->readhead)+j) == '\n' && (file->readsize)-j != 0)										//arrived at the end of the line but not of the memory map
+		{
+			file->readhead = file->readhead + j+1;
+			file->readsize = (file->readsize)-(j+1);
+			*(biffer + i) = '\n';
+			return 0;
+		}
+
+
+	} while (status);
+
+	fprintf(stderr, "nothing happened, well that's an error\n");
+	fprintf(stderr, "error in read2 function\n");
+	return -1;
 }
