@@ -1351,7 +1351,7 @@ int isendofprogram(struct programend *f)
  * 2) Verifie si il reste encore des threads de lecture actifs.
  * Retour =
  *   - 0 si une(ou les deux) des deux conditions est vraie
- *   - -1 si les deux conditions sont fausse
+ *   - -1 si les deux conditions sont fausses
  */
 int verify_end(struct buff *buffer,struct fractal **f)
 {
@@ -1373,10 +1373,15 @@ int verify_end(struct buff *buffer,struct fractal **f)
     return -1;
   }
 }
-
 /*
- * @pre
- * @post
+ * @pre buffer != NULL && f!=NULL
+ * @post Cette fonction verifie plusieurs condition pour determiner si les consommateurs doivent ou non arreter d'être créé.
+ * 1) Verifie si il reste des fractals dans le Buffer "buffer". Si oui la varables **f stocke la structure
+ * 2) Verifie le signal d'arrêt des producteurs
+ * 3) Verifie si il y a toujours des producteurs actifs
+ * Retour =
+ *   - 0 si une(o pluisuers) des troisconditions est vraie
+ *   - -1 si les trois conditions sont fausses
  */
 int verify_endproducteur(struct buff *buffer,struct fractal **f)
 {
@@ -1414,8 +1419,10 @@ int verify_endproducteur(struct buff *buffer,struct fractal **f)
 }
 
 /*
- * @pre
- * @post
+ * @pre f != NULL && frac != NULL
+ * @post Cette fonction permet de stocker la fractal "frac" dans fractalHigh si elle a une moyenne supérieur
+ * à la fractal initialement présente dans  fractalHigh. Si se moyenne est inférieur alors elle n'est pas ajouté et est supprimé.
+ * Si fractalHigh ne contient pas encore de fractal, alors la moyenne vaut INT_MIN
  */
 int fractalhighmodify(struct fractalHigh *f, struct fractal *frac, int average)
 {
@@ -1440,11 +1447,15 @@ int fractalhighmodify(struct fractalHigh *f, struct fractal *frac, int average)
 }
 
 /*
- * @pre
- * @post
+ * @pre f != NULL
+ * @post retourne la fractal contenue dans la structure fractalHigh f
  */
 struct fractal *getfractalhigh(struct fractalHigh *f)
 {
+  if(f == NULL)
+  {
+    return NULL;
+  }
   sem_wait(&(f->acces));
   struct fractal *big =  f->high;
   sem_post(&(f->acces));
@@ -1452,11 +1463,15 @@ struct fractal *getfractalhigh(struct fractalHigh *f)
 }
 
 /*
- * @pre
- * @post
+ * @pre list != NULL
+ * @post Supprime tout les noeuds present dans la liste chainée "list"
  */
 void listthread_free(struct listthread *list)
 {
+  if(list == NULL)
+  {
+    return;
+  }
   struct thread *current = list->head;
   struct thread *next;
   while(current != NULL)
