@@ -194,7 +194,11 @@ int main(int argc, char *argv[])
                 printf("bad max_thread number");
                 return -1;
             }
-            create_all(BITMAP_ALL); //Initialisation de toutes les variables utilent au programme
+            err = create_all(BITMAP_ALL); //Initialisation de toutes les variables utilent au programme
+            if(err !=0)
+            {
+              return -1;
+            }
             err = readfile(argc,argv,4,1);
             if(err == -1)
             {
@@ -208,7 +212,11 @@ int main(int argc, char *argv[])
         else //Non presence du parametre '--maxthreads' dans les arguments
         {
             max_thread = -1; //Si pas de nombre maximum de thread
-            create_all(BITMAP_ALL); //Initialisation de toutes les variables utilent au programme
+            err = create_all(BITMAP_ALL); //Initialisation de toutes les variables utilent au programme
+            if(err !=0)
+            {
+              return -1;
+            }
             err = readfile(argc,argv,2,1);
             if(err == -1)
             {
@@ -231,7 +239,11 @@ int main(int argc, char *argv[])
                 //error(err,"bad max_thread number");
                 return -1;
             }
-            create_all(BITMAP_AVERAGE); //Initialisation de toutes les variables utilent au programme
+            err = create_all(BITMAP_AVERAGE); //Initialisation de toutes les variables utilent au programme
+            if(err !=0)
+            {
+              return -1;
+            }
             err = readfile(argc,argv,3,2);
             if(err == -1)
             {
@@ -245,7 +257,11 @@ int main(int argc, char *argv[])
         else //Non presence du parametre '--maxthreads' dans les arguments
         {
             max_thread = -1;
-            create_all(BITMAP_AVERAGE); //Initialisation de toutes les variables utilent au programme
+            err = create_all(BITMAP_AVERAGE); //Initialisation de toutes les variables utilent au programme
+            if(err !=0)
+            {
+              return -1;
+            }
             err = readfile(argc,argv,1,2);
             if(err == -1)
             {
@@ -1617,7 +1633,7 @@ int thread_all()
           i++;
         }
       }
-      if(j<20 && (isendofprogram(endofproducteur)==0) && (isendofprogram(end)==0))
+      if(j<20 && j<numberproducteur+1 && (isendofprogram(endofproducteur)==0) && (isendofprogram(end)==0) || j<1)
       {
         err = sem_trywait(&(buffer->full));
         if(err != 0)
