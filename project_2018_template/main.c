@@ -737,8 +737,11 @@ int readfile(int argc, char *argv[], int begin, int type)
 }
 
 /*
- * @pre
- * @post
+ *  lecture lit dans un fichier et créées avec les lignes valides des structure fractal
+ *
+ *  accepte seulement un pointeur vide qui sera typecast en entier
+ *
+ *  ne retourne rien
  */
 
 
@@ -1799,14 +1802,14 @@ void *consumer(void *parametre)
  pthread_exit(NULL);
 }
 
-/*	the refresh function loads part/whole file in memory depending on the file size
- *	it does so by modifying the fileinfo structure
+/*	la fonction refresh sert a (re)charger le fichier/morceaux de fichier en mémoire, dépandant de le taille du fichier
+ *	ceci est fait en modifiant certaine partie de la structure fileinfo
  *
- *	it accept a fileinfo structure only
+ *	cela n'accepte que des structure fileinfo
  *
- *	it return an int,
- *	return 0 when succsesful
- *	return -1 when failed
+ *	retourne un entier,
+ *	return 0 appel Réussi
+ *	return -1 en cas d'erreur
  */
 
 
@@ -1877,14 +1880,14 @@ int refresh(struct fileinfo *file)
 }
 
 
-/*	this function search for the first linefeed found inside memory, it handles the different cases
+/*	cette fonction cherche pour le premier retour de ligne apres le pointeur readhead et déplace le pointeur juste apres(ligne suivante)
  *
- *	it accept a fileinfo structure only
+ *	elle n'accepte que des structure de type fileinfo
  *
- *	it returns a int different in each case,
- *	return 0 if everything went correctly
- *	return 1 if we arrived at the end of the file
- *	return -1 in case of error
+ *	elle retourne un entier
+ *	return 0 tout c'est bien passé
+ *	return 1 on est arrivé en fin de fichier
+ *	return -1 une erreur c'est produite
  */
 
 
@@ -1936,15 +1939,15 @@ int firstlf(struct fileinfo *file)
 	return -1;
 }
 
-/*	this function reads int the memory map and fill the buffer with the first valid line found
+/*	cette fonction insere le fichier en memoire pour le lire, ensuite il renvoit la premiere ligne valide
  *
- *	it accept a fileinfo struct, a buffer and it's length
+ *	elle prend comme arguments une structure de type fileinfo, un pointeur vers une liste de char et sa longeur(liste)
  *
- *	it returns an int,
- *	0 everything's good you can use the buffer and recall this function
- *  -1 huho there's a big error you should stop the the calling thread
- *  1 well it seems we are at the end of the file you should ignore what's in biffer
- *  2 we are at the end of the file too but this time you can use what's inside biffer
+ *	elle renvoit un entier en fonction de cas :
+ *	0 tout vas bien on peut récuperer ce qu'il se trouve dans le buffer et rappeler la fonction
+ *  -1 erreur, généralement critique, il faut arreter le thread appelant
+ *  1 nous somme arrivé a la fin du fichier sans trouver de ligne valide, donc ignorer le buffer
+ *  2 nous somme arrivé a la fin du fichier en trouvant une ligne valide, on peut donc uttiliser le buffer et arreter le thread appelant
  */
 int read2(struct fileinfo *file, char* biffer, int lenbiffer)
 {
