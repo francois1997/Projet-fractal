@@ -19,6 +19,8 @@
 #include <sys/resource.h>
 
 #define SIZE_MAX 16777216
+#define BITMAP_ALL 1
+#define BITMAP_AVERAGE 2
 
 ///////////////////////////////////////////////////////////////////////
 /* Creation des structures necessaires au fonctionnement du programme*/
@@ -192,7 +194,7 @@ int main(int argc, char *argv[])
                 printf("bad max_thread number");
                 return -1;
             }
-            create_all(1); //Initialisation de toutes les variables utilent au programme
+            create_all(BITMAP_ALL); //Initialisation de toutes les variables utilent au programme
             err = readfile(argc,argv,4,1);
             if(err == -1)
             {
@@ -206,7 +208,7 @@ int main(int argc, char *argv[])
         else //Non presence du parametre '--maxthreads' dans les arguments
         {
             max_thread = -1; //Si pas de nombre maximum de thread
-            create_all(1); //Initialisation de toutes les variables utilent au programme
+            create_all(BITMAP_ALL); //Initialisation de toutes les variables utilent au programme
             err = readfile(argc,argv,2,1);
             if(err == -1)
             {
@@ -229,7 +231,7 @@ int main(int argc, char *argv[])
                 //error(err,"bad max_thread number");
                 return -1;
             }
-            create_all(2); //Initialisation de toutes les variables utilent au programme
+            create_all(BITMAP_AVERAGE); //Initialisation de toutes les variables utilent au programme
             err = readfile(argc,argv,3,2);
             if(err == -1)
             {
@@ -243,7 +245,7 @@ int main(int argc, char *argv[])
         else //Non presence du parametre '--maxthreads' dans les arguments
         {
             max_thread = -1;
-            create_all(2) != 0;  //Initialisation de toutes les variables utilent au programme
+            create_all(BITMAP_AVERAGE); //Initialisation de toutes les variables utilent au programme
             err = readfile(argc,argv,1,2);
             if(err == -1)
             {
@@ -460,7 +462,7 @@ int create_all(int etat)
     ////////////////////////////////////////////////////////////////////
     //Separtion des cas ou '-d' est present
     ////////////////////////////////////////////////////////////////////
-    if(etat == 1) //Option avec -d
+    if(etat == BITMAP_ALL) //Option avec -d
     {
       buffer = (struct buff*)malloc(sizeof(struct buff));
       if(buffer == NULL)
@@ -668,8 +670,10 @@ void printallname(struct nameacceslist *list)
 }
 
 /*
- * @pre
- * @post
+ * @pre argc > 1 && argv !=NULL && begin >1 && (type==1 || type ==2)
+ * @post Les fichiers passe en arguments ont ete lu et ferme correctement
+ * ERREUR : 0 = lecture de tous les fichiers effectue correctement
+ *         -1 = erreur
  */
 int readfile(int argc, char *argv[], int begin, int type)
 {
@@ -970,8 +974,9 @@ void * lecture(void* parametre)
 
 
 /*
- * @pre
- * @post
+ * @pre line != NULL
+ * @post Cree une structure fractal dont les parametres sont contenu dans la chaine de caracter "line"
+ * ERREUR retour NULL si line ne contient pas les informations correspondant a une fractal
  */
 struct fractal * split(char* line)
 {
@@ -1034,8 +1039,10 @@ struct fractal * split(char* line)
 }
 
 /*
- * @pre
- * @post
+ * @pre name != NULL &&  list != NULL
+ * @post Verifie si le nom de la fractal se trouve dans la liste chainee
+ *       0 = n'existe pas encore
+ *      -1 = existe déjà
  */
 int verifyduplicatename(char* name, struct nameacceslist *list)
 {
@@ -1055,8 +1062,8 @@ int verifyduplicatename(char* name, struct nameacceslist *list)
 }
 
 /*
- * @pre
- * @post
+ * @pre name != NULL && list != NULL
+ * @post le nom a ete ajoute a la fin de la liste chainee
  */
 int addtolistname(char* name, struct nameacceslist *list)
 {
@@ -1093,8 +1100,10 @@ int addtolistname(char* name, struct nameacceslist *list)
 }
 
 /*
- * @pre
- * @post
+ * @pre name != NULL && list != NULL
+ * @post Le noeud correspondant au nom a ete retire de la liste chainee si elle s'y trouvait
+ * Retour 0 si supprime correctement
+ *       -1 en cas d'erreur ou si le nom ne s'y trouvait pas
  */
 int removetolistname(const char* name, struct nameacceslist *list)
 {
@@ -1143,8 +1152,8 @@ int removetolistname(const char* name, struct nameacceslist *list)
 }
 
 /*
- * @pre
- * @post
+ * @pre list != NULL
+ * @post Supprime tous les noeuds de la liste chainee
  */
 void freelistname(struct nameacceslist *list)
 {
@@ -1168,9 +1177,8 @@ void freelistname(struct nameacceslist *list)
 }
 
 /*
- * @pre buffer!=NULL, n>0
+ * @pre buff!=NULL, n>0
  * @post a construit un buffer partagé contenant n slots
- * MALLOC : buf, (empty, full)->semaphore
  */
 int buf_init(struct buff *buf, int n)
 {
