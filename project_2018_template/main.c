@@ -1492,11 +1492,13 @@ pthread_t *removethread(struct listthread *list)
 {
   if(list == NULL)
   {
+	printf("list = NULL\n");
     return NULL;
   }
   struct thread *head = list->head;
   if(head == NULL)
   {
+	printf("head = NULL \n");
     return NULL;
   }
   list->head = head->next;
