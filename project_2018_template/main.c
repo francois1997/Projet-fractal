@@ -1590,7 +1590,7 @@ int thread_moyenne()
       return -1;
     }
     fractalhighmodify(high,NULL,INT_MIN);
-	printf("max_thread vaut : %d, isendoflecture(endoflecture) vaut : %d, (isendofprogram(end) vaut %d\n", max_thread, isendofprogram(endoflecture), (isendofprogram(end));
+	printf("max_thread vaut : %d, isendoflecture(endoflecture) vaut : %d, (isendofprogram(end) vaut %d\n", max_thread, isendofprogram(endoflecture), (isendofprogram(end)));
     for(int i=0;((i<max_thread || max_thread < 0) && i < 15 && (isendofprogram(endoflecture)==0) && (isendofprogram(end) == 0));i++) {
         err=insertthread(producerthread,(void*)&producermoyenne);
         if(err!=0)
