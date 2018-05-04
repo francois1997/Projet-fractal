@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
             max_thread = atoi(argv[3]);
             if(max_thread < 1) //Verification de la validite du nombre de thread maximal
             {
-                printf("bad max_thread number");
+                printf("bad max_thread number\n");
                 return -1;
             }
             err = create_all(BITMAP_ALL); //Initialisation de toutes les variables utilent au programme
@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
             err = readfile(argc,argv,4,1);
             if(err == -1)
             {
-                printf("error during read file");
+                printf("error during read file\n");
                 clean_all(); //free de toutes les variables cree par malloc
                 return -1;
             }
@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
             err = readfile(argc,argv,2,1);
             if(err == -1)
             {
-                printf("error during read file");
+                printf("error during read file\n");
                 clean_all(); //free de toutes les variables cree par malloc
                 return -1;
             }
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
             max_thread = atoi(argv[2]);
             if(max_thread < 1) //Verification de la validite du nombre de thread maximal
             {
-                printf("bad max thread number");
+                printf("bad max thread number\n");
                 //error(err,"bad max_thread number");
                 return -1;
             }
@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
             err = readfile(argc,argv,3,2);
             if(err == -1)
             {
-                printf("error during read file");
+                printf("error during read file\n");
                 clean_all(); //free de toutes les variables cree par malloc
                 return -1;
             }
@@ -265,7 +265,7 @@ int main(int argc, char *argv[])
             err = readfile(argc,argv,1,2);
             if(err == -1)
             {
-                printf("error during read file");
+                printf("error during read file\n");
                 clean_all(); //free de toutes les variables cree par malloc
                 return -1;
             }
@@ -392,7 +392,7 @@ int create_all(int etat)
     err = sem_init(&(end->acces),0,1);
     if(err != 0)
     {
-      printf("error during end semaphore creation");
+      printf("error during end semaphore creation\n");
       buf_clean(listfractal);
       free(listfractal);
       sem_destroy(&(accesname->acces));
@@ -416,7 +416,7 @@ int create_all(int etat)
     otherfile->number = 0;
     err = sem_init(&(otherfile->acces), 0, 1);
     if(err == -1){
-      printf("error during otherfile semaphore creation");
+      printf("error during otherfile semaphore creation\n");
       buf_clean(listfractal);
       free(listfractal);
       sem_destroy(&(accesname->acces));
@@ -444,7 +444,7 @@ int create_all(int etat)
     endoflecture->value = 0;
     err = sem_init(&(endoflecture->acces), 0, 1);
     if(err == -1){
-      printf("error during endoflecture semaphore creation");
+      printf("error during endoflecture semaphore creation\n");
       buf_clean(listfractal);
       free(listfractal);
       sem_destroy(&(accesname->acces));
@@ -545,7 +545,7 @@ int create_all(int etat)
       otherproducteur->number = 0;
       err = sem_init(&(otherproducteur->acces), 0, 1);
       if(err == -1){
-        printf("error during otherproducteur semaphore creation");
+        printf("error during otherproducteur semaphore creation\n");
         buf_clean(listfractal);
         free(listfractal);
         sem_destroy(&(accesname->acces));
@@ -651,7 +651,7 @@ int create_all(int etat)
       err = sem_init(&(high->acces), 0, 1);      /* Au debut, n slots vides */
       if(err !=0)
       {
-        printf("error during semaphore high creation");
+        printf("error during semaphore high creation\n");
         buf_clean(listfractal);
         free(listfractal);
         sem_destroy(&(accesname->acces));
@@ -706,14 +706,14 @@ int readfile(int argc, char *argv[], int begin, int type)
     {
       if(trynumber > 10) //si pthread_create echoue, reessayer
       {
-          threadreaderfail++;
-          if(threadreaderfail > argc-begin-1) //si aucun thread de lecture n'a
-                                              //ete cree alors envoyer le message d'arret
-          {
-            printf("Error during reader thread creation \n");
-            setendofprogram(end); //met la valeur de la struture end à -1
-            return -1;
-          }
+		threadreaderfail++;
+		if(threadreaderfail > argc-begin-1) //si aucun thread de lecture n'a
+										  //ete cree alors envoyer le message d'arret
+		{
+			printf("Error during reader thread creation \n");
+			setendofprogram(end); //met la valeur de la struture end à -1
+			return -1;
+		}
       }
       else
       {
@@ -731,7 +731,7 @@ int readfile(int argc, char *argv[], int begin, int type)
       err = thread_all();
       if(err == -1)
       {
-          printf("error during thread calculating");
+          printf("error during thread calculating\n");
           return -1;
       }
   }
@@ -740,7 +740,7 @@ int readfile(int argc, char *argv[], int begin, int type)
       err = thread_moyenne();
       if(err == -1)
       {
-          printf("error during thread calculating");
+          printf("error during thread calculating\n");
           return -1;
       }
   }
@@ -750,7 +750,7 @@ int readfile(int argc, char *argv[], int begin, int type)
     err = pthread_join(lecteur[i-begin], NULL);
     if(err!=0) //erreur lors d'un thread
     {
-        printf("lecture pthread end with error");
+        printf("lecture pthread end with error\n");
         setendofprogram(end);
     }
   }
@@ -774,7 +774,7 @@ int readfile(int argc, char *argv[], int begin, int type)
 	int file = open(filename,O_RDONLY);
 	if(file==-1)
 	{
-		printf("error during file opening : %s",filename);
+		printf("error during file opening : %s\n",filename);
 		sem_wait(&(otherfile->acces));
 		(otherfile->number)--;
 		sem_post(&(otherfile->acces));
@@ -800,7 +800,7 @@ int readfile(int argc, char *argv[], int begin, int type)
 		{
 			if(close(file)==-1)
 			{
-				printf("error during file closing : %s",filename);
+				printf("error during file closing : %s\n",filename);
 			}
 			sem_wait(&(otherfile->acces));
 			(otherfile->number)--;
@@ -835,9 +835,9 @@ int readfile(int argc, char *argv[], int begin, int type)
   						{
   							if(close(file)==-1)
   							{
-  								printf("error during file closing : %s",filename);
+  								printf("error during file closing : %s\n",filename);
   							}
-  							printf("fail during add name to list");
+  							printf("fail during add name to list\n");
   							munmap(fileptr->msg, fileptr->memload);
   							sem_wait(&(otherfile->acces));
   							(otherfile->number)--;
@@ -856,7 +856,7 @@ int readfile(int argc, char *argv[], int begin, int type)
 			{
 				if(close(file)==-1)
 				{
-					printf("error during file closing : %s",filename);
+					printf("error during file closing : %s\n",filename);
 				}
 				munmap(fileptr->msg, fileptr->memload);
 				sem_wait(&(otherfile->acces));
@@ -871,7 +871,7 @@ int readfile(int argc, char *argv[], int begin, int type)
 
 		if(close(file)==-1)
 		{
-			printf("error during file closing : %s",filename);
+			printf("error during file closing : %s\n",filename);
 		}
 		munmap(fileptr->msg, fileptr->memload);
 		sem_wait(&(otherfile->acces));
@@ -1195,13 +1195,13 @@ void freelistname(struct nameacceslist *list)
     struct name *suivant = head->next;
     while(current->next != NULL)
     {
-      printf("%s supprimé ... ",current->name);
+      printf("%s supprimé ... \n",current->name);
       free(current->name);
       free(current);
       current = suivant;
       suivant = current->next;
     }
-    printf("%s supprimé ... ",current->name);
+    printf("%s supprimé ... \n",current->name);
     free(current->name);
     free(current);
   }
@@ -1226,14 +1226,14 @@ int buf_init(struct buff *buf, int n)
     err = sem_init(&(buf->empty), 0, n);      /* Au debut, n slots vides */
     if(err !=0)
     {
-      printf("error during semaphore creation");
+      printf("error during semaphore creation\n");
       free(buf->buf);
       return -1;
     }
     err = sem_init(&(buf->full), 0, 0);      /* Au debut, rien a consommer */
     if(err !=0)
     {
-      printf("error during semaphore creation");
+      printf("error during semaphore creation\n");
       free(buf->buf);
       sem_destroy(&(buf->empty));
       return -1;
@@ -1539,7 +1539,7 @@ int insertthread(struct listthread *list,void* funct)
     {
         free(new);
         free(add);
-        printf("pthread_create fail");
+        printf("pthread_create fail\n");
         return -1;
     }
     head = add;
@@ -1559,7 +1559,7 @@ int insertthread(struct listthread *list,void* funct)
     {
         free(new);
         free(add);
-        printf("pthread_create fail");
+        printf("pthread_create fail\n");
         return -1;
     }
     current->next = add;
@@ -1610,7 +1610,7 @@ int thread_moyenne()
           free(current);
           if(err!=0)
           {
-              printf("pthread end with error");
+              printf("pthread end with error\n");
               setendofprogram(end);
               return -1;
           }
@@ -1629,7 +1629,7 @@ int thread_moyenne()
       err = write_bitmap_sdl(big, fractal_get_name(big));
       if(err != 0)
       {
-        printf("Error with write bitmap function");
+        printf("Error with write bitmap function\n");
         return -1;
       }
       printf("thread créé : %d et thread recupere  : %d \n",number,numberrecup);
@@ -1637,7 +1637,7 @@ int thread_moyenne()
     }
     else
     {
-      printf("Pogram stop with end message");
+      printf("Pogram stop with end message\n");
       return -1;
     }
 }
@@ -1723,7 +1723,7 @@ int thread_all()
           if(err!=0)
           {
               setendofprogram(end);
-              printf("pthread end with error");
+              printf("pthread end with error\n");
               return -1;
           }
         }
@@ -1749,7 +1749,7 @@ int thread_all()
           if(err!=0)
           {
               setendofprogram(end);
-              printf("pthread end with error");
+              printf("pthread end with error\n");
               return -1;
           }
         }
