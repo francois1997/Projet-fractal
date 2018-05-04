@@ -1342,6 +1342,10 @@ int isendofprogram(struct programend *f)
   sem_wait(&(f->acces));
   int val = f->value;
   sem_post(&(f->acces));
+  if (val != -1)
+  {
+	  return 0;
+  }
   return val;
 }
 
