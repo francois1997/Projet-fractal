@@ -825,7 +825,6 @@ int readfile(int argc, char *argv[], int begin, int type)
 				{
 					printf("error during file closing : %s",filename);
 				}
-				printf("file finished\n");
 				munmap(fileptr->msg, fileptr->memload);
 				sem_wait(&(otherfile->acces));
 				(otherfile->number)--;
@@ -1319,7 +1318,7 @@ int verify_end(struct buff *buffer,struct fractal **f)
   else
   {
     setendofprogram(endoflecture);
-    printf("Fin du programme pour les producteurs \n");
+    //printf("Fin du programme pour les producteurs \n");
     return -1;
   }
 }
@@ -1357,7 +1356,7 @@ int verify_endproducteur(struct buff *buffer,struct fractal **f)
   else
   {
     setendofprogram(endofproducteur);
-    printf("Fin du programme pour les consommateurs \n");
+    //printf("Fin du programme pour les consommateurs \n");
     pthread_mutex_unlock(&verification);
     return -1;
   }
@@ -1718,7 +1717,7 @@ void *producer(void *parametre)
           fractal_free(f);
           pthread_exit(NULL);
         }
-        printf("Une fractal terminee avec succes : %s \n",fractal_get_name(f));
+        //printf("Une fractal terminee avec succes : %s \n",fractal_get_name(f));
         buf_insert(buffer, f);
     }
     else
@@ -1764,7 +1763,7 @@ void *producermoyenne(void *parametre)
           pthread_exit(NULL);
         }
         sum = sum / (fractal_get_width(f))*(fractal_get_height(f));
-        printf("Une fractal terminee avec succes : %s \n",fractal_get_name(f));
+        //printf("Une fractal terminee avec succes : %s \n",fractal_get_name(f));
         int retour = fractalhighmodify(high,f,sum);
         if(retour == 0)
         {
@@ -1787,7 +1786,7 @@ void *consumer(void *parametre)
  {
    if(fract != NULL)
    {
-     printf("une fractal bitmaper de nom : %s \n",fractal_get_name(fract));
+     //printf("une fractal bitmaper de nom : %s \n",fractal_get_name(fract));
      write_bitmap_sdl(fract, fractal_get_name(fract));
      removetolistname(fractal_get_name(fract), accesname);
      fractal_free(fract);
@@ -1995,7 +1994,7 @@ int read2(struct fileinfo *file, char* biffer, int lenbiffer)
 			if (file->finished == 1)
 			{
 				printf("File finished fd :%d\n", file->fd);
-				printf("return code 1\n");
+				//printf("return code 1\n");
 				return 1;
 			}
 			if (refresh(file) == -1)
@@ -2011,7 +2010,7 @@ int read2(struct fileinfo *file, char* biffer, int lenbiffer)
 			if (file->finished == 1)
 			{
 				printf("File finished fd :%d\n", file->fd);
-				printf("return code 2\n");
+				//printf("return code 2\n");
 				*(biffer + i) = '\n';
 				return 2;
 			}
