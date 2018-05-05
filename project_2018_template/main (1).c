@@ -1403,7 +1403,6 @@ int HighAverageModify(struct listfractalhigh *f, struct fractal *frac, int avera
     return -1;
   }
   int err = 0;
-  printf("Enter");
   sem_wait(&(f->acces));
   int moyenne = f->average;
   if(average == moyenne) //il faut juste ajouter la fractal à la listfractalhigh
@@ -1442,6 +1441,7 @@ int HighAverageModify(struct listfractalhigh *f, struct fractal *frac, int avera
         return -1;
       }
       err = addtolistfractalhigh(f,frac);
+      printf("Current high fractal is :%s \n",fractal_get_name(f->head->fract));
       sem_post(&(f->acces));
       return 0;
   }
@@ -1460,6 +1460,7 @@ int addtolistfractalhigh(struct listfractalhigh *f, struct fractal *frac)
     }
     new->fract = frac;
     new->next = NULL;
+    f->head = new;
     return 0;
   }
   else if (current->next == NULL) {
