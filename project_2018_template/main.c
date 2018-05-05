@@ -61,6 +61,19 @@ struct thread{
   struct thread *next;
 };
 
+//Structure contenant la tete de la liste chainee des fractal high
+struct listfractalhigh{
+  struct nodefractal *head;
+  int average;
+  sem_t acces;
+};
+
+//Liste chainee contenant les fractal high
+struct nodefractal{
+  struct fractal *fract;
+  struct nodefractal *next;
+};
+
 //Structure permettant de stocker les informations concernant la fractal de plus grande moyenne
 struct fractalHigh{
   int average;
@@ -109,6 +122,9 @@ struct fileinfo {
 
 
 //Declaration de toutes les fonctions
+int HighAverageModify(struct listfractalhigh *f, struct fractal *frac, int average, struct buff *buffer);
+int addtolistfractalhigh(struct listfractalhigh *f, struct fractal *frac);
+int clean_listfractalhigh(struct listfractalhigh *f, struct buff *buffer);
 void clean_all();
 int create_all(int etat);
 void printallname(struct nameacceslist *list);
@@ -727,7 +743,7 @@ int readfile(int argc, char *argv[], int begin, int type)
     sem_post(&(otherfile->acces));
   }
   printf("i beg your pardon is the error here ?\n");
-  if(type == 1) // type 1 = avec parametre '-d'
+  if(type == BITMAP_ALL) // type 1 = avec parametre '-d'
   {
       err = thread_all();
       if(err == -1)
@@ -1422,6 +1438,142 @@ int verify_endproducteur(struct buff *buffer,struct fractal **f)
     return -1;
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+ * @pre f != NULL && frac != NULL
+ * @post Cette fonction permet de stocker la fractal "frac" dans fractalHigh si elle a une moyenne supérieur
+ * à la fractal initialement présente dans  fractalHigh. Si se moyenne est inférieur alors elle n'est pas ajouté et est supprimé.
+ * Si fractalHigh ne contient pas encore de fractal, alors la moyenne vaut INT_MIN
+ */
+int HighAverageModify(struct listfractalhigh *f, struct fractal *frac, int average, struct buff *buffer)
+{
+  int err = 0;
+  sem_wait(&(f->acces));
+  int moyenne = f->average;
+  if(average == moyenne) //il faut juste ajouter la fractal à la listfractalhigh
+  {
+    err = addtolistfractalhigh(f,frac);
+    if(err == -1)
+    {
+      return -1;
+    }
+    return 0;
+  }
+  else if(average < moyenne) //Directement bitmapper la fractal
+  {
+    buf_insert(buffer, frac);
+  }
+  else // il faut vider toute la liste et bitmapper les fractals qui s'y trouvait et ensuite insèrer la nouvelle fractal dans la listfractalhigh
+  {
+      err = clean_listfractalhigh(f,buffer);
+      return err;
+  }
+  sem_post(&(f->acces));
+}
+
+int addtolistfractalhigh(struct listfractalhigh *f, struct fractal *frac)
+{
+  struct nodefractal *current= f->head;
+  if(current == NULL)
+  {
+    struct nodefractal *new = (struct nodefractal*)malloc(sizeof(struct nodefractal));
+    if(new == NULL)
+    {
+      printf("Erreur malloc fractal in listfractalhigh \n");
+      return -1;
+    }
+    new->fract = frac;
+    new->next = NULL;
+    return 0;
+  }
+  else if (current->next == NULL) {
+    struct nodefractal *new = (struct nodefractal*)malloc(sizeof(struct nodefractal));
+    if(new == NULL)
+    {
+      printf("Erreur malloc fractal in listfractalhigh \n");
+      return -1;
+    }
+    current->next = new;
+    new->fract = frac;
+    new->next = NULL;
+    return 0;
+  }
+  else
+  {
+    while(current->next != NULL)
+    {
+      current = current->next;
+    }
+    struct nodefractal *new = (struct nodefractal*)malloc(sizeof(struct nodefractal));
+    if(new == NULL)
+    {
+      printf("Erreur malloc fractal in listfractalhigh \n");
+      return -1;
+    }
+    current->next = new;
+    new->fract = frac;
+    new->next = NULL;
+    return 0;
+  }
+}
+
+int clean_listfractalhigh(struct listfractalhigh *f, struct buff *buffer)
+{
+  if(f == NULL)
+  {
+    printf("Error listfractalhigh isn't initialize \n");
+    return -1;
+  }
+  if(buffer == NULL)
+  {
+    printf("Error buffer isn't initialize \n");
+    return -1;
+  }
+  struct nodefractal *current = f->head;
+  struct nodefractal *suivant = NULL;
+  while(current != NULL)
+  {
+    suivant = current->next;
+    buf_insert(buffer, current->fract);
+    free(current);
+    current = suivant;
+  }
+  return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /*
  * @pre f != NULL && frac != NULL
