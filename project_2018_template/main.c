@@ -172,6 +172,7 @@ struct programend *endofproducteur = NULL;
 struct fractalHigh *high = NULL;
 struct listthread *producerthread = NULL;
 struct listthread *consumerthread = NULL;
+struct listfractalhigh *listhigh = NULL;
 pthread_mutex_t verification;
 
 
@@ -354,6 +355,11 @@ void clean_all()
   {
     free(endofproducteur);
   }
+  if(listhigh != NULL)
+  {
+    sem_destroy(&(listhigh->acces));
+    free(listhigh);
+  }
 }
 
 /*
@@ -492,6 +498,43 @@ int create_all(int etat)
     producerthread->head = NULL;
     producerthread->numberthread = 0;
 
+    listhigh = (struct listfractalhigh *)malloc(sizeof(struct listfractalhigh));
+    if(listhigh == NULL){
+      printf("listhigh malloc fail \n");
+      buf_clean(listfractal);
+      free(listfractal);
+      sem_destroy(&(accesname->acces));
+      free(accesname);
+      sem_destroy(&(end->acces));
+      free(end);
+      sem_destroy(&(otherfile->acces));
+      free(otherfile);
+      sem_destroy(&(endoflecture->acces));
+      free(endoflecture);
+      free(producerthread);
+      return -1;
+    }
+    err = sem_init(&(listhigh->acces), 0, 1);      /* Au debut, n slots vides */
+    if(err !=0)
+    {
+      printf("error during semaphore high creation\n");
+      buf_clean(listfractal);
+      free(listfractal);
+      sem_destroy(&(accesname->acces));
+      free(accesname);
+      sem_destroy(&(end->acces));
+      free(end);
+      sem_destroy(&(otherfile->acces));
+      free(otherfile);
+      sem_destroy(&(endoflecture->acces));
+      free(endoflecture);
+      free(producerthread);
+      free(listhigh);
+      return -1;
+    }
+    listhigh->head = NULL;
+    listhigh->average = INT_MIN;
+
     ////////////////////////////////////////////////////////////////////
     //Separtion des cas ou '-d' est present
     ////////////////////////////////////////////////////////////////////
@@ -512,6 +555,8 @@ int create_all(int etat)
         sem_destroy(&(endoflecture->acces));
         free(endoflecture);
         free(producerthread);
+        sem_destroy(&(listhigh->acces));
+        free(listhigh);
         return -1;
       }
       if(max_thread == -1)
@@ -536,6 +581,8 @@ int create_all(int etat)
           sem_destroy(&(endoflecture->acces));
           free(endoflecture);
           free(producerthread);
+          sem_destroy(&(listhigh->acces));
+          free(listhigh);
           free(buffer);
           return -1;
       }
@@ -555,6 +602,8 @@ int create_all(int etat)
         sem_destroy(&(endoflecture->acces));
         free(endoflecture);
         free(producerthread);
+        sem_destroy(&(listhigh->acces));
+        free(listhigh);
         buf_clean(buffer);
         return -1;
       }
@@ -573,6 +622,8 @@ int create_all(int etat)
         sem_destroy(&(endoflecture->acces));
         free(endoflecture);
         free(producerthread);
+        sem_destroy(&(listhigh->acces));
+        free(listhigh);
         buf_clean(buffer);
         free(otherproducteur);
         return -1;
@@ -593,6 +644,8 @@ int create_all(int etat)
         sem_destroy(&(endoflecture->acces));
         free(endoflecture);
         free(producerthread);
+        sem_destroy(&(listhigh->acces));
+        free(listhigh);
         buf_clean(buffer);
         sem_destroy(&(otherproducteur->acces));
         free(otherproducteur);
@@ -616,6 +669,8 @@ int create_all(int etat)
         sem_destroy(&(endoflecture->acces));
         free(endoflecture);
         free(producerthread);
+        sem_destroy(&(listhigh->acces));
+        free(listhigh);
         buf_clean(buffer);
         sem_destroy(&(otherproducteur->acces));
         free(otherproducteur);
@@ -638,6 +693,8 @@ int create_all(int etat)
         sem_destroy(&(endoflecture->acces));
         free(endoflecture);
         free(producerthread);
+        sem_destroy(&(listhigh->acces));
+        free(listhigh);
         buf_clean(buffer);
         sem_destroy(&(otherproducteur->acces));
         free(otherproducteur);
@@ -662,6 +719,8 @@ int create_all(int etat)
         sem_destroy(&(endoflecture->acces));
         free(endoflecture);
         free(producerthread);
+        sem_destroy(&(listhigh->acces));
+        free(listhigh);
         return -1;
       }
       err = sem_init(&(high->acces), 0, 1);      /* Au debut, n slots vides */
@@ -679,6 +738,8 @@ int create_all(int etat)
         sem_destroy(&(endoflecture->acces));
         free(endoflecture);
         free(producerthread);
+        sem_destroy(&(listhigh->acces));
+        free(listhigh);
         free(high);
         return -1;
       }
