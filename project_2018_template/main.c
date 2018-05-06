@@ -116,7 +116,7 @@ struct fileinfo {
 
 //Declaration de toutes les fonctions
 int bitmapallfractalhigh(struct listfractalhigh *f);
-int deleteallfractalhigh(struct listfractalhigh *f);
+void deleteallfractalhigh(struct listfractalhigh *f);
 int HighAverageModify(struct listfractalhigh *f, struct fractal *frac, int average, struct buff *buffer, int type);
 int addtolistfractalhigh(struct listfractalhigh *f, struct fractal *frac);
 int clean_listfractalhigh(struct listfractalhigh *f, struct buff *buffer, int type);
@@ -1478,6 +1478,8 @@ int clean_listfractalhigh(struct listfractalhigh *f, struct buff *buffer, int ty
   return 0;
 }
 
+
+
 int bitmapallfractalhigh(struct listfractalhigh *f)
 {
   printf("ENTER BITMAP ALL FRACTALHIGH \n");
@@ -1507,6 +1509,7 @@ int bitmapallfractalhigh(struct listfractalhigh *f)
       if(err != 0)
       {
         printf("Error with write bitmap function\n");
+        f->head = current; //ne pas perdre la tête de la liste
         sem_post(&(f->acces));
         return -1;
       }
@@ -1520,19 +1523,21 @@ int bitmapallfractalhigh(struct listfractalhigh *f)
   return 0;
 }
 
-int deleteallfractalhigh(struct listfractalhigh *f)
+void deleteallfractalhigh(struct listfractalhigh *f)
 {
+  int etat = 0;
   sem_wait(&(f->acces));
   if(f == NULL)
   {
     printf("Error listfractalhigh isn't initialize \n");
     sem_post(&(f->acces));
-    return -1;
+    return;
   }
   struct nodefractal *current = f->head;
   struct nodefractal *suivant = NULL;
   while(current != NULL)
   {
+      etat = -2;
       suivant = current->next;
       fractal_free(current->fract);
       free(current);
@@ -1541,7 +1546,10 @@ int deleteallfractalhigh(struct listfractalhigh *f)
   sem_post(&(f->acces));
   sem_destroy(&(f->acces));
   free(f);
-  return 0;
+  if(etat == -2)
+  {
+    printf("listhigh is not empty \n");
+  }
 }
 
 /*
@@ -1711,7 +1719,7 @@ int thread_all()
     int j =0; //pour les consommateurs
     while((arret == 0 )&& (isendofprogram(end)== 0))
     {
-      if(i < 100 && (i<max_thread || max_thread < 0) && (isendofprogram(endoflecture)==0) && (isendofprogram(end)==0))
+      if(i < 30 && (i<max_thread || max_thread < 0) && (isendofprogram(endoflecture)==0) && (isendofprogram(end)==0))
       {
         err=insertthread(producerthread,(void*)&producer);
         if(err!=0)
@@ -1727,7 +1735,7 @@ int thread_all()
           i++;
         }
       }
-      if(j<20 && j<numberproducteur+1 && (isendofprogram(endofproducteur)==0) && (isendofprogram(end)==0) || j<1)
+      if(j<15 && j<numberproducteur+1 && (isendofprogram(endofproducteur)==0) && (isendofprogram(end)==0) || j<1)
       {
         err = sem_trywait(&(buffer->full));
         if(err != 0)
