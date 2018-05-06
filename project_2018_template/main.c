@@ -74,13 +74,6 @@ struct nodefractal{
   struct nodefractal *next;
 };
 
-//Structure permettant de stocker les informations concernant la fractal de plus grande moyenne
-struct fractalHigh{
-  int average;
-  struct fractal *high;
-  sem_t acces;
-};
-
 //Structure qui stocke le nombre de thread lisant les fichiers qui sont encore
 // en cours d'execution
 struct numberlecteur{
@@ -106,7 +99,7 @@ struct programend{
  *	offset 		: long qui decrit ou est la fin de la zone memoire par rapport aux debut du fichier
  *	sizefile 	: long qui decrit la taille du fichier
  *	fd 			: file descriptor du fichier
- *	finished 	: int qui decrit si la zone memoire reouvre la fin du fichier ou pas
+ *	finished 	: int qui decrit si la zone memoire recouvre la fin du fichier ou pas
  */
 struct fileinfo {
 	long *msg;
@@ -122,9 +115,11 @@ struct fileinfo {
 
 
 //Declaration de toutes les fonctions
-int HighAverageModify(struct listfractalhigh *f, struct fractal *frac, int average, struct buff *buffer);
+int bitmapallfractalhigh(struct listfractalhigh *f);
+int deleteallfractalhigh(struct listfractalhigh *f);
+int HighAverageModify(struct listfractalhigh *f, struct fractal *frac, int average, struct buff *buffer, int type);
 int addtolistfractalhigh(struct listfractalhigh *f, struct fractal *frac);
-int clean_listfractalhigh(struct listfractalhigh *f, struct buff *buffer);
+int clean_listfractalhigh(struct listfractalhigh *f, struct buff *buffer, int type);
 void clean_all();
 int create_all(int etat);
 void printallname(struct nameacceslist *list);
@@ -143,8 +138,6 @@ void setendofprogram(struct programend *f);
 int isendofprogram(struct programend *f);
 int verify_end(struct buff *buffer,struct fractal **f);
 int verify_endproducteur(struct buff *buffer,struct fractal **f);
-int fractalhighmodify(struct fractalHigh *f, struct fractal *frac, int average);
-struct fractal *getfractalhigh(struct fractalHigh *f);
 struct fractal* buf_remove(struct buff *buffer);
 void listthread_free(struct listthread *list);
 pthread_t *removethread(struct listthread *list);
@@ -169,7 +162,6 @@ struct numberlecteur *otherproducteur = NULL;
 struct programend *end = NULL;
 struct programend *endoflecture = NULL;
 struct programend *endofproducteur = NULL;
-struct fractalHigh *high = NULL;
 struct listthread *producerthread = NULL;
 struct listthread *consumerthread = NULL;
 struct listfractalhigh *listhigh = NULL;
@@ -223,6 +215,7 @@ int main(int argc, char *argv[])
                 clean_all(); //free de toutes les variables cree par malloc
                 return -1;
             }
+            bitmapallfractalhigh(listhigh);
             clean_all(); //free de toutes les variables cree par malloc
             return 0;
         }
@@ -241,6 +234,7 @@ int main(int argc, char *argv[])
                 clean_all(); //free de toutes les variables cree par malloc
                 return -1;
             }
+            bitmapallfractalhigh(listhigh);
             clean_all(); //free de toutes les variables cree par malloc
             return 0;
         }
@@ -268,6 +262,7 @@ int main(int argc, char *argv[])
                 clean_all(); //free de toutes les variables cree par malloc
                 return -1;
             }
+            bitmapallfractalhigh(listhigh);
             clean_all(); //free de toutes les variables cree par malloc
             return 0;
         }
@@ -286,6 +281,7 @@ int main(int argc, char *argv[])
                 clean_all(); //free de toutes les variables cree par malloc
                 return -1;
             }
+            bitmapallfractalhigh(listhigh);
             clean_all(); //free de toutes les variables cree par malloc
            return 0;
         }
@@ -300,15 +296,6 @@ int main(int argc, char *argv[])
 void clean_all()
 {
   printf("Function clean all variables \n");
-  if(high != NULL)
-  {
-    if(high->high != NULL)
-    {
-      removetolistname(fractal_get_name(high->high),accesname);//on retire d'abord le nom de la liste de nom
-      fractal_free(high->high);
-    }
-    free(high);
-  }
   if(accesname != NULL)
   {
     printallname(accesname);
@@ -357,8 +344,7 @@ void clean_all()
   }
   if(listhigh != NULL)
   {
-    sem_destroy(&(listhigh->acces));
-    free(listhigh);
+    deleteallfractalhigh(listhigh);
   }
 }
 
@@ -705,44 +691,7 @@ int create_all(int etat)
     }
     else //option sans -d
     {
-      high = (struct fractalHigh *)malloc(sizeof(struct fractalHigh));
-      if(high == NULL){
-        printf("high malloc fail \n");
-        buf_clean(listfractal);
-        free(listfractal);
-        sem_destroy(&(accesname->acces));
-        free(accesname);
-        sem_destroy(&(end->acces));
-        free(end);
-        sem_destroy(&(otherfile->acces));
-        free(otherfile);
-        sem_destroy(&(endoflecture->acces));
-        free(endoflecture);
-        free(producerthread);
-        sem_destroy(&(listhigh->acces));
-        free(listhigh);
-        return -1;
-      }
-      err = sem_init(&(high->acces), 0, 1);      /* Au debut, n slots vides */
-      if(err !=0)
-      {
-        printf("error during semaphore high creation\n");
-        buf_clean(listfractal);
-        free(listfractal);
-        sem_destroy(&(accesname->acces));
-        free(accesname);
-        sem_destroy(&(end->acces));
-        free(end);
-        sem_destroy(&(otherfile->acces));
-        free(otherfile);
-        sem_destroy(&(endoflecture->acces));
-        free(endoflecture);
-        free(producerthread);
-        sem_destroy(&(listhigh->acces));
-        free(listhigh);
-        free(high);
-        return -1;
-      }
+      //Rien à faire en plus
     }
     return 0;
 }
@@ -959,123 +908,6 @@ int readfile(int argc, char *argv[], int begin, int type)
 	}
  }
 
-/*
-void * lecture(void* parametre)
-{
-
-  printf("Lecture du fichier : %s \n",(char *)parametre);
-  int err=0;
-  char* filename = (char *)parametre;
-  int file = open(filename,O_RDONLY);
-  if(file==-1)
-  {
-    printf("error during file opening : %s",filename);
-    sem_wait(&(otherfile->acces));
-    (otherfile->number)--;
-    sem_post(&(otherfile->acces));
-    pthread_exit(NULL);
-  }
-  else
-  {
-    int etat = 1;
-    while(etat!=0)
-    {
-      int i = 0;
-      char caractere = ' ';
-      char ligne[64+32*2+2*sizeof(double)];
-      while(caractere != '\n' && etat!=0)
-      {
-        etat = read(file,(void*)&caractere,sizeof(char));
-        if(etat <= 0)
-        {
-          if(close(file)==-1)
-          {
-                  printf("error during file closing : %s",filename);
-				  //code recurant
-                  sem_wait(&(otherfile->acces));
-                  (otherfile->number)--;
-                  sem_post(&(otherfile->acces));
-                  pthread_exit(NULL);
-          }
-          if(etat < 0)
-          {
-            printf("error during file reading : %s",filename);
-          }
-          sem_wait(&(otherfile->acces));
-          (otherfile->number)--;
-          sem_post(&(otherfile->acces));
-          pthread_exit(NULL);
-        }
-        //printf("%c",caractere);
-        *(ligne+i) = caractere;
-        i++;
-      }
-      //printf("\n");
-      if((*ligne != '#') && (*ligne != '\n')) //il ne s'agit pas d'une ligne de commentaire ni d'une ligne vide
-      {
-        struct fractal *newfract = split(ligne);
-        if(newfract == NULL)
-        {
-          if(close(file)==-1)
-          {
-                 printf("error during file closing : %s",filename);
-                 sem_wait(&(otherfile->acces));
-                 (otherfile->number)--;
-                 sem_post(&(otherfile->acces));
-                 pthread_exit(NULL);
-          }
-          printf("fail during fractal build");
-          sem_wait(&(otherfile->acces));
-          (otherfile->number)--;
-          sem_post(&(otherfile->acces));
-          pthread_exit(NULL);
-        }
-        else
-        {
-          if(verifyduplicatename(newfract->name,accesname)==0)
-          {
-            buf_insert(listfractal, newfract);
-            err = addtolistname(newfract->name,accesname);
-            if(err != 0)
-            {
-              if(close(file)==-1)
-              {
-                      printf("error during file closing : %s",filename);
-                      sem_wait(&(otherfile->acces));
-                      (otherfile->number)--;
-                      sem_post(&(otherfile->acces));
-                      pthread_exit(NULL);
-              }
-              printf("fail during add name to list");
-              sem_wait(&(otherfile->acces));
-              (otherfile->number)--;
-              sem_post(&(otherfile->acces));
-              pthread_exit(NULL);
-            }
-          }
-          else
-          {
-            fractal_free(newfract);
-          }
-        }
-      }
-    }
-    if(close(file)==-1)
-    {
-            printf("error during file closing : %s",filename);
-            sem_wait(&(otherfile->acces));
-            (otherfile->number)--;
-            sem_post(&(otherfile->acces));
-            pthread_exit(NULL);
-    }
-    sem_wait(&(otherfile->acces));
-    (otherfile->number)--;
-    sem_post(&(otherfile->acces));
-    pthread_exit(NULL);
-  }
-}
-*/
-
 
 /*
  * @pre line != NULL
@@ -1264,8 +1096,6 @@ int removetolistname(const char* name, struct nameacceslist *list)
  */
 void freelistname(struct nameacceslist *list)
 {
-  printf("Liste des noms avant supression : \n");
-  printallname(list);
   struct name *head = list->head;
   if(head!=NULL)
   {
@@ -1501,26 +1331,19 @@ int verify_endproducteur(struct buff *buffer,struct fractal **f)
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 /*
  * @pre f != NULL && frac != NULL
  * @post Cette fonction permet de stocker la fractal "frac" dans fractalHigh si elle a une moyenne supérieur
  * à la fractal initialement présente dans  fractalHigh. Si se moyenne est inférieur alors elle n'est pas ajouté et est supprimé.
  * Si fractalHigh ne contient pas encore de fractal, alors la moyenne vaut INT_MIN
  */
-int HighAverageModify(struct listfractalhigh *f, struct fractal *frac, int average, struct buff *buffer)
+int HighAverageModify(struct listfractalhigh *f, struct fractal *frac, int average, struct buff *buffer,int type)
 {
+  if(f == NULL)
+  {
+    printf("listfractalhigh isn't initialize \n");
+    return -1;
+  }
   int err = 0;
   sem_wait(&(f->acces));
   int moyenne = f->average;
@@ -1529,24 +1352,47 @@ int HighAverageModify(struct listfractalhigh *f, struct fractal *frac, int avera
     err = addtolistfractalhigh(f,frac);
     if(err == -1)
     {
+      sem_post(&(f->acces));
       return -1;
     }
+    sem_post(&(f->acces));
     return 0;
   }
   else if(average < moyenne) //Directement bitmapper la fractal
   {
-    buf_insert(buffer, frac);
+    if(type == BITMAP_ALL)
+    {
+      buf_insert(buffer, frac);
+    }
+    else
+    {
+      fractal_free(frac);
+    }
+    sem_post(&(f->acces));
+    return 0;
   }
   else // il faut vider toute la liste et bitmapper les fractals qui s'y trouvait et ensuite insèrer la nouvelle fractal dans la listfractalhigh
   {
-      err = clean_listfractalhigh(f,buffer);
-      return err;
+    f->average = average;
+      err = clean_listfractalhigh(f,buffer, type);
+      if(err != 0)
+      {
+        sem_post(&(f->acces));
+        return -1;
+      }
+      err = addtolistfractalhigh(f,frac);
+      sem_post(&(f->acces));
+      return 0;
   }
-  sem_post(&(f->acces));
 }
 
 int addtolistfractalhigh(struct listfractalhigh *f, struct fractal *frac)
 {
+  if(f == NULL)
+  {
+    printf("Erreur listfractalhigh isn't initialize \n");
+    return -1;
+  }
   struct nodefractal *current= f->head;
   if(current == NULL)
   {
@@ -1558,6 +1404,7 @@ int addtolistfractalhigh(struct listfractalhigh *f, struct fractal *frac)
     }
     new->fract = frac;
     new->next = NULL;
+    f->head = new;
     return 0;
   }
   else if (current->next == NULL) {
@@ -1591,93 +1438,110 @@ int addtolistfractalhigh(struct listfractalhigh *f, struct fractal *frac)
   }
 }
 
-int clean_listfractalhigh(struct listfractalhigh *f, struct buff *buffer)
+int clean_listfractalhigh(struct listfractalhigh *f, struct buff *buffer, int type)
 {
   if(f == NULL)
   {
     printf("Error listfractalhigh isn't initialize \n");
     return -1;
   }
-  if(buffer == NULL)
+
+  struct nodefractal *current = f->head;
+  struct nodefractal *suivant = NULL;
+  if(type == BITMAP_ALL)
   {
-    printf("Error buffer isn't initialize \n");
+      if(buffer == NULL)
+      {
+        printf("Error buffer isn't initialize \n");
+        return -1;
+      }
+      while(current != NULL)
+      {
+        suivant = current->next;
+        buf_insert(buffer, current->fract);
+        free(current);
+        current = suivant;
+      }
+      f->head = NULL;
+  }
+  else
+  {
+    while(current != NULL)
+    {
+      suivant = current->next;
+      fractal_free(current->fract);
+      free(current);
+      current = suivant;
+    }
+    f->head = NULL;
+  }
+  return 0;
+}
+
+int bitmapallfractalhigh(struct listfractalhigh *f)
+{
+  printf("ENTER BITMAP ALL FRACTALHIGH \n");
+  int err = 0;
+  int number = 0;
+  sem_wait(&(f->acces));
+  if(f == NULL)
+  {
+    printf("Error listfractalhigh isn't initialize \n");
+    sem_post(&(f->acces));
+    return -1;
+  }
+  struct nodefractal *current = f->head;
+  if(current == NULL)
+  {
+    printf("No fractalHigh \n");
+  }
+  struct nodefractal *suivant = NULL;
+  while(current != NULL)
+  {
+      suivant = current->next;
+      printf("Le nom de la fractal est : %s \n",fractal_get_name(current->fract));
+      char name[64+6+1];
+      strcpy(name, "fractout_");
+      strcat(name, fractal_get_name(current->fract));
+      err = write_bitmap_sdl(current->fract, name);
+      if(err != 0)
+      {
+        printf("Error with write bitmap function\n");
+        sem_post(&(f->acces));
+        return -1;
+      }
+      fractal_free(current->fract);
+      free(current);
+      current = suivant;
+      number++;
+      f->head = current; //Permet de ne pas perdre la tête si il y a une erreur dans write_bitmap_sdl
+  }
+  sem_post(&(f->acces));
+  return 0;
+}
+
+int deleteallfractalhigh(struct listfractalhigh *f)
+{
+  sem_wait(&(f->acces));
+  if(f == NULL)
+  {
+    printf("Error listfractalhigh isn't initialize \n");
+    sem_post(&(f->acces));
     return -1;
   }
   struct nodefractal *current = f->head;
   struct nodefractal *suivant = NULL;
   while(current != NULL)
   {
-    suivant = current->next;
-    buf_insert(buffer, current->fract);
-    free(current);
-    current = suivant;
+      suivant = current->next;
+      fractal_free(current->fract);
+      free(current);
+      current = suivant;
   }
-  return 0;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
- * @pre f != NULL && frac != NULL
- * @post Cette fonction permet de stocker la fractal "frac" dans fractalHigh si elle a une moyenne supérieur
- * à la fractal initialement présente dans  fractalHigh. Si se moyenne est inférieur alors elle n'est pas ajouté et est supprimé.
- * Si fractalHigh ne contient pas encore de fractal, alors la moyenne vaut INT_MIN
- */
-int fractalhighmodify(struct fractalHigh *f, struct fractal *frac, int average)
-{
-  sem_wait(&(f->acces));
-  if(f->average < average)
-  {
-    f->average = average;
-    if(f->high != NULL)
-    {
-      //removetolistname(fractal_get_name(f->high), accesname);
-      fractal_free(f->high);
-    }
-    f->high = frac;
-    sem_post(&(f->acces));
-    return 1;
-  }
-  else
-  {
-    sem_post(&(f->acces));
-    return 0;
-  }
-}
-
-/*
- * @pre f != NULL
- * @post retourne la fractal contenue dans la structure fractalHigh f
- */
-struct fractal *getfractalhigh(struct fractalHigh *f)
-{
-  if(f == NULL)
-  {
-    return NULL;
-  }
-  sem_wait(&(f->acces));
-  struct fractal *big =  f->high;
   sem_post(&(f->acces));
-  return big;
+  sem_destroy(&(f->acces));
+  free(f);
+  return 0;
 }
 
 /*
@@ -1716,7 +1580,7 @@ pthread_t *removethread(struct listthread *list)
   struct thread *head = list->head;
   if(head == NULL)
   {
-	printf("head = NULL \n");
+	   printf("head = NULL \n");
     return NULL;
   }
   list->head = head->next;
@@ -1796,14 +1660,7 @@ int thread_moyenne()
 {
     int err;
     int number = 0;
-    if(fractalhighmodify == NULL)
-    {
-      printf("fractalhighmodify doesn't exist. \n");
-      setendofprogram(end);
-      return -1;
-    }
-    fractalhighmodify(high,NULL,INT_MIN);
-	printf("max_thread vaut : %d, isendoflecture(endoflecture) vaut : %d, (isendofprogram(end) vaut %d\n", max_thread, isendofprogram(endoflecture), (isendofprogram(end)));
+	  printf("max_thread vaut : %d, isendoflecture(endoflecture) vaut : %d, (isendofprogram(end) vaut %d\n", max_thread, isendofprogram(endoflecture), (isendofprogram(end)));
     for(int i=0;((i<max_thread || max_thread < 0) && i < 15 && (isendofprogram(endoflecture)==0) && (isendofprogram(end) == 0));i++) {
         err=insertthread(producerthread,(void*)&producermoyenne);
         if(err!=0)
@@ -1837,30 +1694,7 @@ int thread_moyenne()
           }
         }
     }
-    if(isendofprogram(end) == 0)
-    {
-      struct fractal *big = getfractalhigh(high);
-      if(big == NULL)
-      {
-        printf("No fractal high\n");
-        setendofprogram(end);
-        return -1;
-      }
-      printf("Le nom de la fractal est : %s \n",fractal_get_name(big));
-      err = write_bitmap_sdl(big, fractal_get_name(big));
-      if(err != 0)
-      {
-        printf("Error with write bitmap function\n");
-        return -1;
-      }
-      printf("thread créé : %d et thread recupere  : %d \n",number,numberrecup);
-      return 0;
-    }
-    else
-    {
-      printf("Pogram stop with end message\n");
-      return -1;
-    }
+    return 0;
 }
 
 /*
@@ -1877,7 +1711,7 @@ int thread_all()
     int j =0; //pour les consommateurs
     while((arret == 0 )&& (isendofprogram(end)== 0))
     {
-      if(i < 15 && (i<max_thread || max_thread < 0) && (isendofprogram(endoflecture)==0) && (isendofprogram(end)==0))
+      if(i < 100 && (i<max_thread || max_thread < 0) && (isendofprogram(endoflecture)==0) && (isendofprogram(end)==0))
       {
         err=insertthread(producerthread,(void*)&producer);
         if(err!=0)
@@ -1986,26 +1820,33 @@ int thread_all()
 void *producer(void *parametre)
 {
   struct fractal *f;
+  int sum;
   while((isendofprogram(endoflecture) == 0) && (isendofprogram(end)== 0) && (verify_end(listfractal,&f) == 0))
   {
     if(f != NULL)
     {
         int val;
+        sum = 0;
         for(int a=0; (a<(fractal_get_width(f)*fractal_get_height(f)));a++)
         {
             int x = a % (fractal_get_width(f));
             int y = a/(fractal_get_width(f));
             val = fractal_compute_value(f, x, y);
             fractal_set_value(f,x,y,val);
+            sum = sum + val;
         }
         if(isendofprogram(end)!= 0)
         {
-          //removetolistname(fractal_get_name(f),accesname);
           fractal_free(f);
           pthread_exit(NULL);
         }
-        //printf("Une fractal terminee avec succes : %s \n",fractal_get_name(f));
-        buf_insert(buffer, f);
+        sum = sum / (fractal_get_width(f))*(fractal_get_height(f));
+        int retour = HighAverageModify(listhigh, f, sum, buffer,BITMAP_ALL);
+        if(retour != 0)
+        {
+           setendofprogram(end);
+           pthread_exit(NULL);
+        }
     }
     else
     {
@@ -2051,11 +1892,11 @@ void *producermoyenne(void *parametre)
         }
         sum = sum / (fractal_get_width(f))*(fractal_get_height(f));
         //printf("Une fractal terminee avec succes : %s \n",fractal_get_name(f));
-        int retour = fractalhighmodify(high,f,sum);
-        if(retour == 0)
+        int retour = HighAverageModify(listhigh, f, sum, NULL,BITMAP_AVERAGE);
+        if(retour != 0)
         {
-          //removetolistname(fractal_get_name(f), accesname);
-          fractal_free(f);
+           setendofprogram(end);
+           pthread_exit(NULL);
         }
      }
   }
