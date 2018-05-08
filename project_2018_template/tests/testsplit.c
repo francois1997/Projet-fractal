@@ -64,12 +64,17 @@ struct phrase * split(char* line)
    if(numberarg==5)
    {
      const char* name2 = *splitedline;
-     int width = atoi(*(splitedline+1));
-     int height = atoi(*(splitedline+2));
-     float a = atof(*(splitedline+3));
-     float b = atof(*(splitedline+4));
+     int width = -2;
+     int height = -2;
+     float a = -2;
+     float b = -2;
+     width = atoi(*(splitedline+1));
+     height = atoi(*(splitedline+2));
+     a = atof(*(splitedline+3));
+     b = atof(*(splitedline+4));
+     printf("name :%s, width : %d, height : %d, a : %f, b : %f\n",name2,width, height, a ,b );
 
-     if (width != 0 && height != 0)
+     if (width > 0 && height > 0 && (a <= 1 && a >= -1) && (b <= 1 && b >= -1))
      {
 
        struct phrase *ret = (struct phrase*)malloc(sizeof(struct phrase));
@@ -98,6 +103,7 @@ struct phrase * split(char* line)
        return NULL;
      }
    }
+   return NULL;
 }
 
 
@@ -108,11 +114,11 @@ void test_split() {
   char *c4 = "             \n";
 
   struct phrase *tet = split(c1);
-  CU_ASSERT_EQUAL(tet->name, "fract1");
+  CU_ASSERT_STRING_EQUAL(tet->name, "fract1");
   CU_ASSERT_EQUAL(tet->width, 1200);
   CU_ASSERT_EQUAL(tet->height, 1200);
-  CU_ASSERT_EQUAL(tet->a, 0.2);
-  CU_ASSERT_EQUAL(tet->b, 0.2);
+  CU_ASSERT_DOUBLE_EQUAL(tet->a, 0.2, 3);
+  CU_ASSERT_DOUBLE_EQUAL(tet->b, 0.2, 3);
   free(tet->name);
   free(tet);
   tet = NULL;
