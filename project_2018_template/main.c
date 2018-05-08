@@ -1620,14 +1620,17 @@ void listthread_free(struct listthread *list)
 }
 
 /*
- * @pre
- * @post
+ * @pre list != NULL
+ * @post Cette fonction renvois le premier thread présent dans la liste chainée "list" (first in first out FIFO)
+ * Retour : - NULL si il n'y a pas de thread ou que la list n'a pas été initialisée (dans ce cas un message d'arrêt est envoyé)
+ *          - Non NULL dans les autres cas
  */
 pthread_t *removethread(struct listthread *list)
 {
   if(list == NULL)
   {
 	//printf("list = NULL\n");
+    setendofprogram(end);
     return NULL;
   }
   struct thread *head = list->head;
@@ -1644,25 +1647,31 @@ pthread_t *removethread(struct listthread *list)
 }
 
 /*
- * @pre
- * @post
+ * @pre list != NULL && funct != NULL(fonction prenant un parametre de type void*)
+ * @post Cette fonction insère le thread à la fin de la liste chainée "list"
+ * Retour : - 0 = succes
+ *          - -1 = echec
+ * Une erreur est affichée en  cas d'erreur.
  */
 int insertthread(struct listthread *list,void* funct)
 {
   int err = 0;
   if(list == NULL)
   {
-    return -2;
+    printf("list isn't initialised\n");
+    return -1;
   }
   struct thread *head = list->head;
   pthread_t *new = (pthread_t *)malloc(sizeof(pthread_t));
   if(new == NULL)
   {
+    printf("pthread_malloc fail\n");
     return -1;
   }
   struct thread *add = (struct thread*)malloc(sizeof(struct thread));
   if(add == NULL)
   {
+    printf("struct thread malloc fail\n");
     free(new);
     return -1;
   }
@@ -1706,8 +1715,11 @@ int insertthread(struct listthread *list,void* funct)
 }
 
 /*
- * @pre
- * @post
+ * @pre /
+ * @post Cette fonction gère la création de thread permettant de calculer des fractals. Seule les fractals de plus haute moyenne pourront être bitmappé.
+ * Retour : - 0 fonction réalisée avec succèscan
+ *          - -1 echec
+ * En cas d'erreur, un message est affiché et un signal d'arrêt du programme est lancé
  */
 int thread_moyenne()
 {
@@ -1718,7 +1730,7 @@ int thread_moyenne()
         if(err!=0)
         {
             printf("pthread_create producter fail. \n");
-            //end of programme ?
+            setendofprogram(end);
             return -1;
         }
         number++;
@@ -1750,8 +1762,11 @@ int thread_moyenne()
 }
 
 /*
- * @pre
- * @post
+ * @pre /
+ * @post Cette fonction gère la création de thread permettant de calculer des fractals. Toutes les fractals sont bitmappé
+ * Retour : - 0 fonction réalisée avec succèscan
+ *          - -1 echec
+ * En cas d'erreur, un message est affiché et un signal d'arrêt du programme est lancé
  */
 int thread_all()
 {
@@ -1814,7 +1829,7 @@ int thread_all()
 
     int numberproducteurrecup = 0;
     int value = 0;
-    while(value == 0)
+    while(value == 0) // récupère les producteurs
     {
         pthread_t *current = removethread(producerthread);
         if(current == NULL)
@@ -1840,7 +1855,7 @@ int thread_all()
 
     value = 0;
     int numberconsumerrecup =0;
-    while(value == 0)
+    while(value == 0) //récupère les consommateurs
     {
         pthread_t *current = removethread(consumerthread);
         if(current == NULL)
@@ -1866,8 +1881,8 @@ int thread_all()
 }
 
 /*
- * @pre
- * @post
+ * @pre /
+ * @post Cette fonction permet de calculer les fractals. Elle est à l'écoute des messages d'arrêt du programme "end"
  */
 void *producer(void *parametre)
 {
@@ -1913,8 +1928,8 @@ void *producer(void *parametre)
 }
 
 /*
- * @pre
- * @post
+ * @pre /
+ * @post Cette fonction permet de calculer les fractals. Elle est à l'écoute des messages d'arrêt du programme "end"
  */
 void *producermoyenne(void *parametre)
 {
@@ -1938,7 +1953,6 @@ void *producermoyenne(void *parametre)
         if(isendofprogram(end) != 0)
         {
           printf("End programme different de 0 \n");
-          //removetolistname(fractal_get_name(f), accesname);
           fractal_free(f);
           pthread_exit(NULL);
         }
@@ -1956,8 +1970,8 @@ void *producermoyenne(void *parametre)
 }
 
 /*
- * @pre
- * @post
+ * @pre /
+ * @post Cette fonction permet de itmapper les fractals présentent dans le buffer "buffer". Elle est à l'écoute des messages d'arrêt du programme "end"
  */
 void *consumer(void *parametre)
 {
