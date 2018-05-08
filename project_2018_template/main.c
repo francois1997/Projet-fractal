@@ -1340,7 +1340,7 @@ int verify_endproducteur(struct buff *buffer,struct fractal **f)
 
 
 /*
- * @pre f != NULL && frac != NULL
+ * @pre f != NULL && frac != NULL && buffer != NULL && (type == 1 || type == 2)
  * @post Cette fonction permet de stocker les fractals de plus haute moyenne.
  * Si la moyenne de "frac" est égale à la fractal déjà présente dans la liste chainée "f", alors elle l'ajoute à cette Liste
  * Si fractalHigh ne contient pas encore de fractal, alors ajoute la fractal à la liste chainée "f" et change la valeur de f->average
@@ -1405,8 +1405,11 @@ int HighAverageModify(struct listfractalhigh *f, struct fractal *frac, int avera
 }
 
 /*
- * @pre f != NULL
- * @post retourne la valeur stocké dans la structure f
+ * @pre f != NULL && frac != NULL
+ * @post Cette fonction ajoute la fractal "frac" à la fin de la liste chainée "f"
+ * Retour : 0 = Opération effectuée avec succès.
+ *         -1 = echec
+ * En cas d'erreur, une erreur est affichée
  */
 int addtolistfractalhigh(struct listfractalhigh *f, struct fractal *frac)
 {
@@ -1460,6 +1463,16 @@ int addtolistfractalhigh(struct listfractalhigh *f, struct fractal *frac)
   }
 }
 
+/*
+ * @pre f != NULL && buffer != NULL && (type == 1 || type == 2)
+ * @post Deux cas se présente :
+ *       - type == 1, alors toutes les fractals présentes dans la liste chainée "f" sont retirées de cette liste et insèrée dans le buffer "buffer" et la nouvelle fractal est insèrée dans
+ *      la liste chainée
+ *       - type == 2, les fractals sont retirées de la liste chainée et supprimée (mémoire free) et la nouvelle fractal est insèrée dans la liste chainée.
+ * Retour : - 0 = opération réussie
+            - -1 = echec
+ * En cas d'echec, une erreur est affichée
+ */
 int clean_listfractalhigh(struct listfractalhigh *f, struct buff *buffer, int type)
 {
   if(f == NULL)
@@ -1470,7 +1483,7 @@ int clean_listfractalhigh(struct listfractalhigh *f, struct buff *buffer, int ty
 
   struct nodefractal *current = f->head;
   struct nodefractal *suivant = NULL;
-  if(type == BITMAP_ALL)
+  if(type == BITMAP_ALL) //type == 1
   {
       if(buffer == NULL)
       {
@@ -1486,7 +1499,7 @@ int clean_listfractalhigh(struct listfractalhigh *f, struct buff *buffer, int ty
       }
       f->head = NULL;
   }
-  else
+  else // type == 2
   {
     while(current != NULL)
     {
@@ -1500,8 +1513,13 @@ int clean_listfractalhigh(struct listfractalhigh *f, struct buff *buffer, int ty
   return 0;
 }
 
-
-
+/*
+ * @pre f != NULL
+ * @post Cette fonction permet de bitmapper toutes les fractals présentent dans la liste chainée "f"
+ * Retour : - 0 = opération réussie
+            - -1 = echec
+ * En cas d'echec, une erreur est affichée
+ */
 int bitmapallfractalhigh(struct listfractalhigh *f)
 {
   printf("ENTER BITMAP ALL FRACTALHIGH \n");
@@ -1545,6 +1563,11 @@ int bitmapallfractalhigh(struct listfractalhigh *f)
   return 0;
 }
 
+/*
+ * @pre f != NULL
+ * @post Cette fonction permet de vider la mémoire utiliser par "f" ainsi que de vérifier si il ne reste pas de fractal dedans. Dans le cas ou il en reste,
+ * elles sont supprimées.
+ */
 void deleteallfractalhigh(struct listfractalhigh *f)
 {
   int etat = 0;
