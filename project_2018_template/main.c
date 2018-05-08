@@ -290,8 +290,9 @@ int main(int argc, char *argv[])
 }
 
 /*
- * @pre
- * @post
+ * @pre /
+ * @post Supprime toutes les variables, initialisées avec malloc, de la memoire avant de fermer
+ * le processus
  */
 void clean_all()
 {
@@ -304,7 +305,6 @@ void clean_all()
   if(listfractal != NULL)
   {
     buf_clean(listfractal);
-    //free(listfractal);
   }
   if(end != NULL)
   {
@@ -349,8 +349,9 @@ void clean_all()
 }
 
 /*
- * @pre
- * @post
+ * @pre etat == 1 || etat ==2
+ * @post Cette fonction permet d'initialiser toutes les variables (globals) nécessaires au fonctionnement du programme
+ * Return -1 si une des variables n'a pas pu être initialisée et affiche un message d'erreur.
  */
 int create_all(int etat)
 {
@@ -697,8 +698,8 @@ int create_all(int etat)
 }
 
 /*
- * @pre
- * @post
+ * @pre list != NULL
+ * @post Affiche tous les noms présent dans la liste chainée "list"
  */
 void printallname(struct nameacceslist *list)
 {
@@ -717,6 +718,7 @@ void printallname(struct nameacceslist *list)
  * @post Les fichiers passe en arguments ont ete lu et ferme correctement
  * ERREUR : 0 = lecture de tous les fichiers effectue correctement
  *         -1 = erreur
+ * Affiche un message d'erreur en cas d'erreur.
  */
 int readfile(int argc, char *argv[], int begin, int type)
 {
@@ -732,14 +734,14 @@ int readfile(int argc, char *argv[], int begin, int type)
     {
       if(trynumber > 10) //si pthread_create echoue, reessayer
       {
-		threadreaderfail++;
-		if(threadreaderfail > argc-begin-1) //si aucun thread de lecture n'a
-										  //ete cree alors envoyer le message d'arret
-		{
-			printf("Error during reader thread creation \n");
-			setendofprogram(end); //met la valeur de la struture end à -1
-			return -1;
-		}
+    		threadreaderfail++;
+    		if(threadreaderfail > argc-begin-1) //si aucun thread de lecture n'a
+    										  //ete cree alors envoyer le message d'arret
+    		{
+    			printf("Error during reader thread creation \n");
+    			setendofprogram(end); //met la valeur de la struture end à -1
+    			return -1;
+    		}
       }
       else
       {
@@ -749,7 +751,7 @@ int readfile(int argc, char *argv[], int begin, int type)
     }
     trynumber = 0;
     sem_wait(&(otherfile->acces));
-    (otherfile->number)++;
+    (otherfile->number)++; // Incrémente de 1 le nombre de thread de lecture
     sem_post(&(otherfile->acces));
   }
   if(type == BITMAP_ALL) // type 1 = avec parametre '-d'
@@ -776,7 +778,7 @@ int readfile(int argc, char *argv[], int begin, int type)
     err = pthread_join(lecteur[i-begin], NULL);
     if(err!=0) //erreur lors d'un thread
     {
-        printf("lecture pthread end with error\n");
+        printf("lecture pthread_join() end with error\n");
         setendofprogram(end);
     }
   }
@@ -784,11 +786,9 @@ int readfile(int argc, char *argv[], int begin, int type)
 }
 
 /*
- *  lecture lit dans un fichier et créées avec les lignes valides des structure fractal
- *
- *  accepte seulement un pointeur vide qui sera typecast en entier
- *
- *  ne retourne rien
+ * @pre accepte seulement un pointeur vide qui sera typecast en entier
+ * @post lecture lit dans un fichier et créées avec les lignes valides des structure fractal
+ * Ne retourne rien
  */
 
 
@@ -892,9 +892,6 @@ int readfile(int argc, char *argv[], int begin, int type)
 
 			}
 		}
-
-
-
 		if(close(file)==-1)
 		{
 			printf("error during file closing : %s\n",filename);
@@ -959,11 +956,14 @@ struct fractal * split(char* line)
      int height = atoi(*(splitedline+2));
      double a = atof(*(splitedline+3));
      double b = atof(*(splitedline+4));
-     //struct fractal *newfract;// = fractal_new(name, width, height, a, b);
-     if (width != 0 && height != 0)
+     if(a>= -1.0 && a <= 1.0 && b>= -1.0 && b <= 1.0)
      {
-       struct fractal* newfract = fractal_new(name, width, height, a, b);
-       return newfract;
+       if (width != 0 && height != 0)
+       {
+         struct fractal* newfract = fractal_new(name, width, height, a, b);
+         return newfract;
+       }
+       return NULL;
      }
      return NULL;
    }
@@ -1002,6 +1002,10 @@ int verifyduplicatename(char* name, struct nameacceslist *list)
  */
 int addtolistname(char* name, struct nameacceslist *list)
 {
+  if(list == NULL)
+  {
+    return -1;
+  }
   sem_wait(&(list->acces));
   struct name *current = list->head;
   if(current == NULL)
@@ -1119,6 +1123,9 @@ void freelistname(struct nameacceslist *list)
 /*
  * @pre buff!=NULL, n>0
  * @post a construit un buffer partagé contenant n slots
+ * Return  : 0 = la création du buffer à été éffectuée avec succès.
+ *          -1 = erreur lors d'une initialisation à une variable.
+ * Une erreur est affiché en cas d'erreur
  */
 int buf_init(struct buff *buf, int n)
 {
@@ -1126,6 +1133,7 @@ int buf_init(struct buff *buf, int n)
     buf->buf = (struct fractal **)malloc(sizeof(struct fractal*)*n); //cree un tableau de n slot
     if((buf->buf)==NULL)
     {
+       printf("error during buf image creation\n");
        return -1;
     }
     buf->length = n;                       /* Buffer content les entiers */
@@ -1157,10 +1165,10 @@ void buf_clean(struct buff *buffer)
 {
     struct fractal *f;
     int ret = buf_isempty(buffer,&f);
-    printf(" Buffer is empty  == -1 sinon 0 :%d \n",ret);
+    printf(" Buffer is empty  == -1 sinon 0 :%d \n",ret); //Permet de vérifier si le buffer est vide ou non
     while(ret == 0 && f != NULL)
     {
-      printf("Il reste une fractal : %s \n",fractal_get_name(f));
+      printf("Il reste une fractal : %s \n",fractal_get_name(f)); //affiche les fractals n'ayant pas été supprimée
       fractal_free(f);
       ret = buf_isempty(buffer,&f);
     }
@@ -1187,6 +1195,7 @@ void buf_insert(struct buff *buffer, struct fractal *item)
 
 /* @pre buf!=NULL
  * @post retire le dernier item du buffer partage
+ * Retourne une fractal non null
  */
 struct fractal* buf_remove(struct buff *buffer)
 {
@@ -1332,9 +1341,19 @@ int verify_endproducteur(struct buff *buffer,struct fractal **f)
 
 /*
  * @pre f != NULL && frac != NULL
- * @post Cette fonction permet de stocker la fractal "frac" dans fractalHigh si elle a une moyenne supérieur
- * à la fractal initialement présente dans  fractalHigh. Si se moyenne est inférieur alors elle n'est pas ajouté et est supprimé.
- * Si fractalHigh ne contient pas encore de fractal, alors la moyenne vaut INT_MIN
+ * @post Cette fonction permet de stocker les fractals de plus haute moyenne.
+ * Si la moyenne de "frac" est égale à la fractal déjà présente dans la liste chainée "f", alors elle l'ajoute à cette Liste
+ * Si fractalHigh ne contient pas encore de fractal, alors ajoute la fractal à la liste chainée "f" et change la valeur de f->average
+ * Si la moyenne de la fractal est inférieur àa la moyenne déjà présente deux options sont possibles :
+ *      - type == 1 alors la fractal est ajouté au buffer "buffer"
+ *      - type == 2 alors la fractal est supprimée et sa mémoire libèrée
+ * Si la moyenne de la nouvelle fractal "frac" est supérieur à la valeur moyenne de la fractal déjà présente alors deux options sont possibles :
+ *      - type == 1, alors toutes les fractals présentes dans la liste chainée "f" sont retirées de cette liste et insèrée dans le buffer "buffer" et la nouvelle fractal est insèrée dans
+ *      la liste chainée
+ *      - type == 2, les fractals sont retirées de la liste chainée et supprimée (mémoire free) et la nouvelle fractal est insèrée dans la liste chainée.
+ * Retour : 0 = l'opération s'est correctement éffectuée
+ *         -1 = echec
+ * Dans le cas d'une erreur, une erreur est affichée
  */
 int HighAverageModify(struct listfractalhigh *f, struct fractal *frac, int average, struct buff *buffer,int type)
 {
@@ -1385,6 +1404,10 @@ int HighAverageModify(struct listfractalhigh *f, struct fractal *frac, int avera
   }
 }
 
+/*
+ * @pre f != NULL
+ * @post retourne la valeur stocké dans la structure f
+ */
 int addtolistfractalhigh(struct listfractalhigh *f, struct fractal *frac)
 {
   if(f == NULL)
