@@ -706,7 +706,7 @@ void printallname(struct nameacceslist *list)
   struct name *current = list->head;
     while(current != NULL)
     {
-      printf("%s \n",current->name);
+      //printf("%s \n",current->name);
       current = (current->next);
     }
   sem_post(&(list->acces));
@@ -752,7 +752,6 @@ int readfile(int argc, char *argv[], int begin, int type)
     (otherfile->number)++;
     sem_post(&(otherfile->acces));
   }
-  printf("i beg your pardon is the error here ?\n");
   if(type == BITMAP_ALL) // type 1 = avec parametre '-d'
   {
       err = thread_all();
@@ -1103,13 +1102,13 @@ void freelistname(struct nameacceslist *list)
     struct name *suivant = head->next;
     while(current->next != NULL)
     {
-      printf("%s supprimé ... \n",current->name);
+      //printf("%s supprimé ... \n",current->name);
       free(current->name);
       free(current);
       current = suivant;
       suivant = current->next;
     }
-    printf("%s supprimé ... \n",current->name);
+    //printf("%s supprimé ... \n",current->name);
     free(current->name);
     free(current);
   }
@@ -1582,13 +1581,13 @@ pthread_t *removethread(struct listthread *list)
 {
   if(list == NULL)
   {
-	printf("list = NULL\n");
+	//printf("list = NULL\n");
     return NULL;
   }
   struct thread *head = list->head;
   if(head == NULL)
   {
-	   printf("head = NULL \n");
+	   //printf("head = NULL \n");
     return NULL;
   }
   list->head = head->next;
@@ -1668,7 +1667,6 @@ int thread_moyenne()
 {
     int err;
     int number = 0;
-	  printf("max_thread vaut : %d, isendoflecture(endoflecture) vaut : %d, (isendofprogram(end) vaut %d\n", max_thread, isendofprogram(endoflecture), (isendofprogram(end)));
     for(int i=0;((i<max_thread || max_thread < 0) && i < 15 && (isendofprogram(endoflecture)==0) && (isendofprogram(end) == 0));i++) {
         err=insertthread(producerthread,(void*)&producermoyenne);
         if(err!=0)
