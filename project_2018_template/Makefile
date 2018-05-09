@@ -13,5 +13,11 @@ tests : split
 split : tests/testsplit.c
 	cc tests/testsplit.c -lcunit -o split
 
+gentest : gen main
+	echo>F1 && echo>F2 && ./gen 4 50 15 F1 && ./gen 5 50 15 F2 && ./main F1 F2
+
+gen : tests/fractGen.c
+	cc -std=c99 tests/fractGen.c -o gen
+
 clean :
-	rm main && cd libfractal/ && rm libfractal.a *.o
+	rm main gen F* && cd libfractal/ && rm libfractal.a *.o
