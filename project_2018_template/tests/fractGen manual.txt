@@ -1,0 +1,30 @@
+Ce fichier est la pour expliquer les commande pour la fonction fractgen.c
+
+la fonction fractgen comprend aux minimum 4 arguments
+	1. (int) Niveaux de difficulté de 0 jusque 5
+	2. (int) Nombre maximal de ligne des fichiers
+	3. (int) Longeur maximal des noms de fractal
+	4. ... (char) Nom du/des fichier(s) sur lequel(s) on écrit
+	
+Note importantes : 
+l'écriture du fichier se fait toujour de la premiere ligne, donc on vas ecrire par dessus ce qui existe,
+il est donc interessants de donné uniquement des fichiers vides.
+
+la résolution MAX des images a été mise a celle de 720p, pour changer, il faut changer les valeurs heightmax et widthmax au début du fichier fractgen.c
+
+Description : 
+	niveau 0: ne genere QUE des lignes valides, il s'agit donc juste d'un generateur aleatoire de fractal
+	niveau 1: genere quelque lignes où des erreurs se sont glissée, comme des char a la place de float et vice versa 
+		exemples :
+		fract1 2k00 3012 0.r3 -0i.5
+		fract2 2000 3012 0.3 -0.5
+		fract1 2000 3tr12 0.r3 -ji.5
+	niveau 2: genere des lignes comme aux niveau 1, cepandant rajoute des commentaires et des lignes vides de plus le nom des fractal peut avoir une longeur 99
+		exemples :
+		fract1 200 212 0.53 -0.5
+		        
+		#random comment
+	niveau 3-4 : comme le niveaux 2 mais les lignes foireuse augmentent en probabilité
+	niveau 5 : génere des lignes de byte completement aléatoire
+	
+Le niveau 5 ne garantit plus rien sauf que votre fichier soit rempli de donnée ne voulant rien dire
