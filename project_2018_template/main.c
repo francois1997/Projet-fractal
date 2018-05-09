@@ -154,6 +154,7 @@ int read2(struct fileinfo *file, char* biffer, int lenbiffer);
 
 //Les variables sont declarees en variables global et sont mise a NULL
 int max_thread;
+int onelecture = 0;
 struct buff *buffer = NULL;
 struct buff *listfractal = NULL;
 struct nameacceslist *accesname = NULL;
@@ -723,36 +724,47 @@ void printallname(struct nameacceslist *list)
 int readfile(int argc, char *argv[], int begin, int type)
 {
   int err = 0;
+  char *stdin ="-";
   pthread_t lecteur[argc-begin]; //tableau de thread de taille egal au nombre de fichier
+  int threadval[argc-begin];    // sert a savoir quelle thread ont bien été initialisé
   int trynumber = 0;
   int threadreaderfail = 0;
   for(int i = begin; (i < argc) && (isendofprogram(end) == 0);i++)
   {
+    threadval[i] = 0;
     char * filename = *(argv+i);
-    err = pthread_create(&lecteur[i-begin],NULL,(void *)&lecture,(void *)(*(argv+i)));
-    if(err != 0)
+    if (strcmp(filename, stdin) != 0 ||  onelecture != 1) //sert a ignorer l'argument "-" quand il y en a deux ou plus
     {
-      if(trynumber > 10) //si pthread_create echoue, reessayer
+      threadval[i] = 1;
+      if (strcmp(filename, stdin) == 0)
       {
-    		threadreaderfail++;
-    		if(threadreaderfail > argc-begin-1) //si aucun thread de lecture n'a
-    										  //ete cree alors envoyer le message d'arret
-    		{
-    			printf("Error during reader thread creation \n");
-    			setendofprogram(end); //met la valeur de la struture end à -1
-    			return -1;
-    		}
+        onelecture = 1;
       }
-      else
+      err = pthread_create(&lecteur[i-begin],NULL,(void *)&lecture,(void *)(*(argv+i)));
+      if(err != 0)
       {
-        trynumber++;
-        i--;
+        if(trynumber > 10) //si pthread_create echoue, reessayer
+        {
+      		threadreaderfail++;
+      		if(threadreaderfail > argc-begin-1) //si aucun thread de lecture n'a
+      										  //ete cree alors envoyer le message d'arret
+      		{
+      			printf("Error during reader thread creation \n");
+      			setendofprogram(end); //met la valeur de la struture end à -1
+      			return -1;
+      		}
+        }
+        else
+        {
+          trynumber++;
+          i--;
+        }
       }
+      trynumber = 0;
+      sem_wait(&(otherfile->acces));
+      (otherfile->number)++; // Incrémente de 1 le nombre de thread de lecture
+      sem_post(&(otherfile->acces));
     }
-    trynumber = 0;
-    sem_wait(&(otherfile->acces));
-    (otherfile->number)++; // Incrémente de 1 le nombre de thread de lecture
-    sem_post(&(otherfile->acces));
   }
   if(type == BITMAP_ALL) // type 1 = avec parametre '-d'
   {
@@ -775,11 +787,14 @@ int readfile(int argc, char *argv[], int begin, int type)
   //Recuperation des threads de lecture
   for(int i = begin; i < argc;i++)
   {
-    err = pthread_join(lecteur[i-begin], NULL);
-    if(err!=0) //erreur lors d'un thread
+    if (threadval[i])
     {
-        printf("lecture pthread_join() end with error\n");
-        setendofprogram(end);
+      err = pthread_join(lecteur[i-begin], NULL);
+      if(err!=0) //erreur lors d'un thread
+      {
+          printf("lecture pthread_join() end with error\n");
+          setendofprogram(end);
+      }
     }
   }
   return isendofprogram(end); //recupere la valeur de la structure end : 0 = pas d'erreur -1 = erreur
@@ -797,6 +812,58 @@ int readfile(int argc, char *argv[], int begin, int type)
 	printf("Lecture du fichier : %s \n",(char *)parametre);
 	int err=0;
 	char* filename = (char *)parametre;
+  char* minus = "-";
+  char input[(5*65)+1];
+  int len=0;
+  if (strcmp(minus, filename) == 0)
+  {
+    printf("please enter your fractal and then press enter when finished\n");
+    len = read(0, (void*)input, 5*65);
+    *(input+len)='\n';
+    input[5*65] = '\0';
+    close(0);
+    struct fractal *newfract = split(input);
+    close(0);
+    if(newfract == NULL)
+    {
+          printf("unable to create a fractal\n");
+    }
+    else
+    {
+      if(verifyduplicatename(newfract->name,accesname)==0)
+      {
+        buf_insert(listfractal, newfract);
+        char *nametolist = (char*)malloc(sizeof(char)*(strlen(newfract->name)+1));
+        if(nametolist == NULL)
+        {
+          fractal_free(newfract);
+        }
+        else
+        {
+          strcpy(nametolist,newfract->name);
+          err = addtolistname(nametolist,accesname);
+          if(err != 0)
+          {
+            printf("fail during add name to list\n");
+            sem_wait(&(otherfile->acces));
+            (otherfile->number)--;
+            sem_post(&(otherfile->acces));
+            pthread_exit(NULL);
+          }
+        }
+      }
+      else
+      {
+        fractal_free(newfract);
+      }
+    }
+    sem_wait(&(otherfile->acces));
+    (otherfile->number)--;
+    sem_post(&(otherfile->acces));
+    pthread_exit(NULL);
+  }
+
+
 	int file = open(filename,O_RDONLY);
 	if(file==-1)
 	{
@@ -1917,7 +1984,6 @@ void *producer(void *parametre)
     }
     else
     {
-      printf("Thread producteur sleep \n");
       sleep(0.5);
     }
   }
