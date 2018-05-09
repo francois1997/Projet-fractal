@@ -57,7 +57,7 @@ struct line *newline(struct line *lin, int lenmax)
 
 	if (complexity == 0)
 	{
-		int namelen = (rand()%(lenmax+1));
+		int namelen = (rand()%(lenmax))+1;
 		len = namelen;
 		for (int i = 0; i < namelen; i++)
 		{
