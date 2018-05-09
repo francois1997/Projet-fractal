@@ -813,16 +813,17 @@ int readfile(int argc, char *argv[], int begin, int type)
 	int err=0;
 	char* filename = (char *)parametre;
   char* minus = "-";
-  char input[(5*65)+1];
   int len=0;
-  if (strcmp(minus, filename) == 0)
+
+  if (strcmp(minus, filename) == 0) // check si c'est pour une entréée standart
   {
+    char input[(5*65)+1];
     printf("please enter your fractal and then press enter when finished\n");
-    len = read(0, (void*)input, 5*65);
+    len = read(0, (void*)input, 5*65);    //lis l'entrée standart
     *(input+len)='\n';
     input[5*65] = '\0';
     close(0);
-    struct fractal *newfract = split(input);
+    struct fractal *newfract = split(input); //créée une fractal avec le string lus
     close(0);
     if(newfract == NULL)
     {
@@ -830,7 +831,7 @@ int readfile(int argc, char *argv[], int begin, int type)
     }
     else
     {
-      if(verifyduplicatename(newfract->name,accesname)==0)
+      if(verifyduplicatename(newfract->name,accesname)==0) //vérifie que le nom n'est pas un duplicata
       {
         buf_insert(listfractal, newfract);
         char *nametolist = (char*)malloc(sizeof(char)*(strlen(newfract->name)+1));
@@ -864,6 +865,8 @@ int readfile(int argc, char *argv[], int begin, int type)
   }
 
 
+  //ouvre le fichier pour une lecture d'un fichier
+
 	int file = open(filename,O_RDONLY);
 	if(file==-1)
 	{
@@ -875,6 +878,7 @@ int readfile(int argc, char *argv[], int begin, int type)
 	}
 	else
 	{
+    //initialisation de la structure file info pour travailler sur le fichier
 		struct fileinfo filu;
 		struct fileinfo *fileptr = &filu;
 		fileptr->fd = file;
@@ -889,7 +893,7 @@ int readfile(int argc, char *argv[], int begin, int type)
 
 		char biffer[5*65];
 		int lenbiffer = 5*65;
-		if (refresh(fileptr) == -1)
+		if (refresh(fileptr) == -1)//chargement du fichier en mémoire
 		{
 			if(close(file)==-1)
 			{
@@ -902,7 +906,7 @@ int readfile(int argc, char *argv[], int begin, int type)
 		}
 		while (fileptr->finished == 0 || readtest == 0)
 		{
-			readtest = read2(fileptr, biffer, lenbiffer);
+			readtest = read2(fileptr, biffer, lenbiffer);//lecture du fichier
 			if (readtest == 0 || readtest == 2)
 			{
 				struct fractal *newfract = split(biffer);
