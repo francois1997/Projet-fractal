@@ -18,6 +18,9 @@ gentest : gen main
 
 gen : tests/fractGen.c
 	cc -std=c99 tests/fractGen.c -o gen
+	
+cleangen : 
+	rm F* Gen
 
 clean :
-	rm main gen F* && cd libfractal/ && rm libfractal.a *.o
+	cd libfractal/ && rm libfractal.a *.o
