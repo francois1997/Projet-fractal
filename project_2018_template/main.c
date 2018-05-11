@@ -790,7 +790,7 @@ int readfile(int argc, char *argv[], int begin, int type)
       err = thread_moyenne();
       if(err == -1)
       {
-          printf("error during thread calculating\n");
+          fprintf(stderr,"error during thread calculating\n");
           return -1;
       }
   }
@@ -802,7 +802,7 @@ int readfile(int argc, char *argv[], int begin, int type)
       err = pthread_join(lecteur[i-begin], NULL);
       if(err!=0) //erreur lors d'un thread
       {
-          printf("lecture pthread_join() end with error\n");
+          fprintf(stderr,"lecture pthread_join() end with error\n");
           setendofprogram(end);
       }
     }
@@ -837,7 +837,7 @@ int readfile(int argc, char *argv[], int begin, int type)
     close(0);
     if(newfract == NULL)
     {
-          printf("unable to create a fractal\n");
+          fprintf(stderr,"unable to create a fractal\n");
     }
     else
     {
@@ -855,7 +855,7 @@ int readfile(int argc, char *argv[], int begin, int type)
           err = addtolistname(nametolist,accesname);
           if(err != 0)
           {
-            printf("fail during add name to list\n");
+            fprintf(stderr,"fail during add name to list\n");
             sem_wait(&(otherfile->acces));
             (otherfile->number)--;
             sem_post(&(otherfile->acces));
@@ -880,7 +880,7 @@ int readfile(int argc, char *argv[], int begin, int type)
 	int file = open(filename,O_RDONLY);
 	if(file==-1)
 	{
-		printf("error during file opening : %s\n",filename);
+		fprintf(stderr,"error during file opening : %s\n",filename);
 		sem_wait(&(otherfile->acces));
 		(otherfile->number)--;
 		sem_post(&(otherfile->acces));
@@ -907,7 +907,7 @@ int readfile(int argc, char *argv[], int begin, int type)
 		{
 			if(close(file)==-1)
 			{
-				printf("error during file closing : %s\n",filename);
+				fprintf(stderr,"error during file closing : %s\n",filename);
 			}
 			sem_wait(&(otherfile->acces));
 			(otherfile->number)--;
@@ -922,7 +922,7 @@ int readfile(int argc, char *argv[], int begin, int type)
 				struct fractal *newfract = split(biffer);
 				if(newfract == NULL)
 				{
-				      printf("unable to create a fractal\n");
+				      fprintf(stderr,"unable to create a fractal\n");
 				}
 				else
 				{
@@ -942,9 +942,9 @@ int readfile(int argc, char *argv[], int begin, int type)
   						{
   							if(close(file)==-1)
   							{
-  								printf("error during file closing : %s\n",filename);
+  								fprintf(stderr,"error during file closing : %s\n",filename);
   							}
-  							printf("fail during add name to list\n");
+  							fprintf(stderr,"fail during add name to list\n");
   							munmap(fileptr->msg, fileptr->memload);
   							sem_wait(&(otherfile->acces));
   							(otherfile->number)--;
@@ -963,7 +963,7 @@ int readfile(int argc, char *argv[], int begin, int type)
 			{
 				if(close(file)==-1)
 				{
-					printf("error during file closing : %s\n",filename);
+					fprintf(stderr,"error during file closing : %s\n",filename);
 				}
 				munmap(fileptr->msg, fileptr->memload);
 				sem_wait(&(otherfile->acces));
@@ -975,7 +975,7 @@ int readfile(int argc, char *argv[], int begin, int type)
 		}
 		if(close(file)==-1)
 		{
-			printf("error during file closing : %s\n",filename);
+			fprintf(stderr,"error during file closing : %s\n",filename);
 		}
 		munmap(fileptr->msg, fileptr->memload);
 		sem_wait(&(otherfile->acces));
@@ -1214,7 +1214,7 @@ int buf_init(struct buff *buf, int n)
     buf->buf = (struct fractal **)malloc(sizeof(struct fractal*)*n); //cree un tableau de n slot
     if((buf->buf)==NULL)
     {
-       printf("error during buf image creation\n");
+       fprintf(stderr,"error during buf image creation\n");
        return -1;
     }
     buf->length = n;                       /* Buffer content les entiers */
@@ -1222,14 +1222,14 @@ int buf_init(struct buff *buf, int n)
     err = sem_init(&(buf->empty), 0, n);      /* Au debut, n slots vides */
     if(err !=0)
     {
-      printf("error during semaphore creation\n");
+      fprintf(stderr,"error during semaphore creation\n");
       free(buf->buf);
       return -1;
     }
     err = sem_init(&(buf->full), 0, 0);      /* Au debut, rien a consommer */
     if(err !=0)
     {
-      printf("error during semaphore creation\n");
+      fprintf(stderr,"error during semaphore creation\n");
       free(buf->buf);
       sem_destroy(&(buf->empty));
       return -1;
@@ -1249,7 +1249,7 @@ void buf_clean(struct buff *buffer)
     printf(" Buffer is empty  == -1 sinon 0 :%d \n",ret); //Permet de vérifier si le buffer est vide ou non
     while(ret == 0 && f != NULL)
     {
-      printf("Il reste une fractal : %s \n",fractal_get_name(f)); //affiche les fractals n'ayant pas été supprimée
+      fprintf(stderr,"Il reste une fractal : %s \n",fractal_get_name(f)); //affiche les fractals n'ayant pas été supprimée
       fractal_free(f);
       ret = buf_isempty(buffer,&f);
     }
@@ -1440,7 +1440,7 @@ int HighAverageModify(struct listfractalhigh *f, struct fractal *frac, int avera
 {
   if(f == NULL)
   {
-    printf("listfractalhigh isn't initialize \n");
+    fprintf(stderr,"listfractalhigh isn't initialize \n");
     return -1;
   }
   int err = 0;
@@ -1496,7 +1496,7 @@ int addtolistfractalhigh(struct listfractalhigh *f, struct fractal *frac)
 {
   if(f == NULL)
   {
-    printf("Erreur listfractalhigh isn't initialize \n");
+    fprintf(stderr,"Erreur listfractalhigh isn't initialize \n");
     return -1;
   }
   struct nodefractal *current= f->head;
@@ -1505,7 +1505,7 @@ int addtolistfractalhigh(struct listfractalhigh *f, struct fractal *frac)
     struct nodefractal *new = (struct nodefractal*)malloc(sizeof(struct nodefractal));
     if(new == NULL)
     {
-      printf("Erreur malloc fractal in listfractalhigh \n");
+      fprintf(stderr,"Erreur malloc fractal in listfractalhigh \n");
       return -1;
     }
     new->fract = frac;
@@ -1517,7 +1517,7 @@ int addtolistfractalhigh(struct listfractalhigh *f, struct fractal *frac)
     struct nodefractal *new = (struct nodefractal*)malloc(sizeof(struct nodefractal));
     if(new == NULL)
     {
-      printf("Erreur malloc fractal in listfractalhigh \n");
+      fprintf(stderr,"Erreur malloc fractal in listfractalhigh \n");
       return -1;
     }
     current->next = new;
@@ -1534,7 +1534,7 @@ int addtolistfractalhigh(struct listfractalhigh *f, struct fractal *frac)
     struct nodefractal *new = (struct nodefractal*)malloc(sizeof(struct nodefractal));
     if(new == NULL)
     {
-      printf("Erreur malloc fractal in listfractalhigh \n");
+      fprintf(stderr,"Erreur malloc fractal in listfractalhigh \n");
       return -1;
     }
     current->next = new;
@@ -1558,7 +1558,7 @@ int clean_listfractalhigh(struct listfractalhigh *f, struct buff *buffer, int ty
 {
   if(f == NULL)
   {
-    printf("Error listfractalhigh isn't initialize \n");
+    fprintf(stderr,"Error listfractalhigh isn't initialize \n");
     return -1;
   }
 
@@ -1568,7 +1568,7 @@ int clean_listfractalhigh(struct listfractalhigh *f, struct buff *buffer, int ty
   {
       if(buffer == NULL)
       {
-        printf("Error buffer isn't initialize \n");
+        fprintf(stderr,"Error buffer isn't initialize \n");
         return -1;
       }
       while(current != NULL)
@@ -1609,14 +1609,14 @@ int bitmapallfractalhigh(struct listfractalhigh *f)
   sem_wait(&(f->acces));
   if(f == NULL)
   {
-    printf("Error listfractalhigh isn't initialize \n");
+    fprintf(stderr,"Error listfractalhigh isn't initialize \n");
     sem_post(&(f->acces));
     return -1;
   }
   struct nodefractal *current = f->head;
   if(current == NULL)
   {
-    printf("No fractalHigh \n");
+    fprintf(stderr,"No fractalHigh \n");
   }
   struct nodefractal *suivant = NULL;
   while(current != NULL)
@@ -1629,7 +1629,7 @@ int bitmapallfractalhigh(struct listfractalhigh *f)
       err = write_bitmap_sdl(current->fract, name);
       if(err != 0)
       {
-        printf("Error with write bitmap function\n");
+        fprintf(stderr,"Error with write bitmap function\n");
         f->head = current; //ne pas perdre la tête de la liste
         sem_post(&(f->acces));
         return -1;
@@ -1655,7 +1655,7 @@ void deleteallfractalhigh(struct listfractalhigh *f)
   sem_wait(&(f->acces));
   if(f == NULL)
   {
-    printf("Error listfractalhigh isn't initialize \n");
+    fprintf(stderr,"Error listfractalhigh isn't initialize \n");
     sem_post(&(f->acces));
     return;
   }
@@ -1674,7 +1674,7 @@ void deleteallfractalhigh(struct listfractalhigh *f)
   free(f);
   if(etat == -2)
   {
-    printf("listhigh is not empty \n");
+    fprintf(stderr,"listhigh is not empty \n");
   }
 }
 
@@ -1739,20 +1739,20 @@ int insertthread(struct listthread *list,void* funct)
   int err = 0;
   if(list == NULL)
   {
-    printf("list isn't initialised\n");
+    fprintf(stderr,"list isn't initialised\n");
     return -1;
   }
   struct thread *head = list->head;
   pthread_t *new = (pthread_t *)malloc(sizeof(pthread_t));
   if(new == NULL)
   {
-    printf("pthread_malloc fail\n");
+    fprintf(stderr,"pthread_malloc fail\n");
     return -1;
   }
   struct thread *add = (struct thread*)malloc(sizeof(struct thread));
   if(add == NULL)
   {
-    printf("struct thread malloc fail\n");
+    fprintf(stderr,"struct thread malloc fail\n");
     free(new);
     return -1;
   }
@@ -1766,7 +1766,7 @@ int insertthread(struct listthread *list,void* funct)
     {
         free(new);
         free(add);
-        printf("pthread_create fail\n");
+        fprintf(stderr,"pthread_create fail\n");
         return -1;
     }
     head = add;
@@ -1786,7 +1786,7 @@ int insertthread(struct listthread *list,void* funct)
     {
         free(new);
         free(add);
-        printf("pthread_create fail\n");
+        fprintf(stderr,"pthread_create fail\n");
         return -1;
     }
     current->next = add;
@@ -1810,7 +1810,7 @@ int thread_moyenne()
         err=insertthread(producerthread,(void*)&producermoyenne);
         if(err!=0)
         {
-            printf("pthread_create producter fail. \n");
+            fprintf(stderr,"pthread_create producter fail. \n");
             setendofprogram(end);
             return -1;
         }
@@ -1833,7 +1833,7 @@ int thread_moyenne()
           free(current);
           if(err!=0)
           {
-              printf("pthread end with error\n");
+              fprintf(stderr,"pthread end with error\n");
               setendofprogram(end);
               return -1;
           }
@@ -1864,7 +1864,7 @@ int thread_all()
         err=insertthread(producerthread,(void*)&producer);
         if(err!=0)
         {
-            printf("pthread_create fail\n");
+            fprintf(stderr,"pthread_create fail\n");
         }
         else
         {
@@ -1889,7 +1889,7 @@ int thread_all()
           // printf("Consommateur \n");
           if(err!=0)
           {
-              printf("pthread_create fail\n");
+              fprintf(stderr,"pthread_create fail\n");
           }
           else
           {
@@ -1901,7 +1901,7 @@ int thread_all()
       else
       {
         arret = -1;
-        printf("Arret de création des threads \n");
+        fprintf(stderr,"Arret de création des threads \n");
       }
     }
     printf("numbre thread producteur créé : %d \n",numberproducteur);
@@ -1926,7 +1926,7 @@ int thread_all()
           if(err!=0)
           {
               setendofprogram(end);
-              printf("pthread end with error\n");
+              fprintf(stderr,"pthread end with error\n");
               return -1;
           }
         }
@@ -1941,7 +1941,7 @@ int thread_all()
         pthread_t *current = removethread(consumerthread);
         if(current == NULL)
         {
-          printf("Plus de thread consommateur \n");
+          fprintf(stderr,"Plus de thread consommateur \n");
           value = -1;
         }
         else
@@ -1952,7 +1952,7 @@ int thread_all()
           if(err!=0)
           {
               setendofprogram(end);
-              printf("pthread end with error\n");
+              fprintf(stderr,"pthread end with error\n");
               return -1;
           }
         }
