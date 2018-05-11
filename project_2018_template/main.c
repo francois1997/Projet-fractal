@@ -795,7 +795,7 @@ int readfile(int argc, char *argv[], int begin, int type)
       }
   }
   //Recuperation des threads de lecture
-  for(int i = begin; i < argc;i++)
+  for(int i = begin-1; i < argc-1;i++)
   {
     if (threadval[i])
     {
