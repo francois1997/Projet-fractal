@@ -14,7 +14,7 @@ split : tests/testsplit.c
 	cc tests/testsplit.c -lcunit -o split
 
 gentest : gen main
-	echo>F1 && echo>F2 && ./gen 4 50 15 F1 && ./gen 5 50 15 F2 && ./main F1 F2
+	echo>F1 && echo>F2 && ./gen 4 50 15 F1 && ./gen 5 50 15 F2 && ./main F1 F2 Test
 
 gen : tests/fractGen.c
 	cc -std=c99 tests/fractGen.c -o gen
