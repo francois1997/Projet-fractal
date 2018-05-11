@@ -1,0 +1,520 @@
+commit e5cd68fb562667a5e2b8b31b08f36079c3e2b176
+Author: francois1997 <37047753+francois1997@users.noreply.github.com>
+Date:   Fri May 4 19:23:11 2018 +0200
+
+    bugfixing attemptV0.2
+
+ project_2018_template/main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit d48b4296ba34fa712b17f32a359b011cf13b7877
+Author: francois1997 <37047753+francois1997@users.noreply.github.com>
+Date:   Fri May 4 19:22:12 2018 +0200
+
+    bugfixing attempt
+
+ project_2018_template/main.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+commit 346e48f3bfccd0423ab921154564062b3d8f7490
+Author: francois1997 <37047753+francois1997@users.noreply.github.com>
+Date:   Fri May 4 19:05:08 2018 +0200
+
+    added even more troubleshooting
+
+ project_2018_template/main.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+commit 616021a9651b96838c623932d04c9e2af4cb0405
+Author: francois1997 <37047753+francois1997@users.noreply.github.com>
+Date:   Fri May 4 18:39:03 2018 +0200
+
+    added troubleshooting
+
+ project_2018_template/main.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+commit 4af544ac9004d6f38652f64f64ef1cf280bf2b66
+Author: francois1997 <37047753+francois1997@users.noreply.github.com>
+Date:   Fri May 4 18:36:30 2018 +0200
+
+    fixed the libfractal directory weirdness
+
+ project_2018_template/libfractal/fractal.c         | 236 ++++++++++++---------
+ project_2018_template/libfractal/fractal.h         |  28 +--
+ .../libfractal/libfractal/Makefile                 |  15 --
+ .../libfractal/libfractal/fractGen.c               | 153 -------------
+ .../libfractal/libfractal/fractal.c                | 133 ------------
+ .../libfractal/libfractal/fractal.h                | 133 ------------
+ .../libfractal/libfractal/tools.c                  | 103 ---------
+ 7 files changed, 144 insertions(+), 657 deletions(-)
+
+commit b2575d0fd5ffee290c4b56fc0509edfc334a62a6
+Author: francois1997 <37047753+francois1997@users.noreply.github.com>
+Date:   Fri May 4 17:42:38 2018 +0200
+
+    added \n to clear out clotted messages
+
+ main2.c                      | 2039 ------------------------------------------
+ project_2018_template/main.c |   78 +-
+ 2 files changed, 39 insertions(+), 2078 deletions(-)
+
+commit 1f7727a0dcad1eaf8fad6a5922a9a490057530fb
+Author: chauvauxn <37975707+chauvauxn@users.noreply.github.com>
+Date:   Fri May 4 12:57:46 2018 +0200
+
+    add specifications v2.0
+
+ project_2018_template/main.c | 35 +++++++++++++++++++++++++----------
+ 1 file changed, 25 insertions(+), 10 deletions(-)
+
+commit 4de1cb410dcb0140f3666dc892c31104f561c98e
+Author: chauvauxn <37975707+chauvauxn@users.noreply.github.com>
+Date:   Fri May 4 12:47:00 2018 +0200
+
+    Add more specifications
+
+ project_2018_template/main.c | 4130 +++++++++++++++++++++---------------------
+ 1 file changed, 2089 insertions(+), 2041 deletions(-)
+
+commit 44ccc7cdcfd638eb9bf3d03b5d42bf65f59807c7
+Author: chauvauxn <37975707+chauvauxn@users.noreply.github.com>
+Date:   Fri May 4 12:35:37 2018 +0200
+
+    Delete main(1).c
+
+ project_2018_template/main(1).c | 2082 ---------------------------------------
+ 1 file changed, 2082 deletions(-)
+
+commit 6f532df7c695152a359d34d06802ea1a5f6994f6
+Author: chauvauxn <37975707+chauvauxn@users.noreply.github.com>
+Date:   Fri May 4 12:35:07 2018 +0200
+
+    listname corrigé avec nouveaux malloc
+
+ main.c | 4121 ++++++++++++++++++++++++++++++++--------------------------------
+ 1 file changed, 2082 insertions(+), 2039 deletions(-)
+
+commit b2e0b1685ce0424e53a8120c6010134fa6854a6a
+Author: chauvauxn <37975707+chauvauxn@users.noreply.github.com>
+Date:   Fri May 4 12:28:54 2018 +0200
+
+    Listname change
+    
+    Maintenant les noms stockés dans la liste sont des malloc indépendent des noms des fractals
+
+ project_2018_template/main(1).c | 2082 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 2082 insertions(+)
+
+commit 63d6c23dacbfb558a8960ff596f431313d2cac9d
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Fri May 4 12:14:56 2018 +0200
+
+    Add files via upload
+
+ jolfra | 3 +++
+ 1 file changed, 3 insertions(+)
+
+commit dd7cded7c028fd5eef40373ac0957a88cadfc40e
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Fri May 4 12:12:53 2018 +0200
+
+    remove some other printf
+
+ project_2018_template/main.c | 4106 +++++++++++++++++++++---------------------
+ 1 file changed, 2041 insertions(+), 2065 deletions(-)
+
+commit 78318fb97fff29cc2eb83322d01cf15371611cb1
+Author: chauvauxn <37975707+chauvauxn@users.noreply.github.com>
+Date:   Fri May 4 11:59:36 2018 +0200
+
+    if around createall + min consumerthread = 1
+
+ project_2018_template/main.c | 26 +++++++++++++++++++++-----
+ 1 file changed, 21 insertions(+), 5 deletions(-)
+
+commit 3c3cdb2fd014d6025da0bbe21c86d74e70fbf8b0
+Author: chauvauxn <37975707+chauvauxn@users.noreply.github.com>
+Date:   Fri May 4 11:51:49 2018 +0200
+
+    add comments
+
+ project_2018_template/main.c | 4090 +++++++++++++++++++++---------------------
+ 1 file changed, 2049 insertions(+), 2041 deletions(-)
+
+commit 6ec728c7d6c57adf8dc1dbe07b165c83eedd5135
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Fri May 4 11:31:22 2018 +0200
+
+    added better random generation
+
+ fractGen.c | 38 +++++++++++++++++++-------------------
+ 1 file changed, 19 insertions(+), 19 deletions(-)
+
+commit 5d30fb62171a866bb3149c1c107a1900d756b299
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Fri May 4 11:10:21 2018 +0200
+
+    Makefile working properly with the tests
+
+ project_2018_template/Makefile | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+commit eb4e195d5b1cebf344eeadf4206f058e977a74cd
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Fri May 4 11:09:47 2018 +0200
+
+    now i understand and it works
+
+ project_2018_template/tests/testsplit.c | 164 ++++++++++++++++++++++++++++++++
+ 1 file changed, 164 insertions(+)
+
+commit cbaa7a9dbe180f0cf5eed6b5fc3d30330309b49d
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Fri May 4 10:00:54 2018 +0200
+
+    changed the language of the comment
+
+ project_2018_template/main.c | 45 +++++++++++++++++++++++---------------------
+ 1 file changed, 24 insertions(+), 21 deletions(-)
+
+commit 24c883b9fb9a6f0b70e5462d6fe1aff353250b1c
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Fri May 4 09:34:50 2018 +0200
+
+    Added the tests directory as well as one test
+    
+    i still don't understand cunit framework and i haven't found a decent tutorials yet
+
+ project_2018_template/tests/testSplit.c | 128 ++++++++++++++++++++++++++++++++
+ 1 file changed, 128 insertions(+)
+
+commit 73ecdac96e4f174fd20f34d92914031bf008ac73
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Fri May 4 08:38:32 2018 +0200
+
+    got rid of all the useless printf
+
+ project_2018_template/main.c | 15 +++++++--------
+ 1 file changed, 7 insertions(+), 8 deletions(-)
+
+commit a78cb05d8e97490e857a8b94a18520d12a4f8f3e
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Fri May 4 08:22:31 2018 +0200
+
+    uploaded a working library
+    
+    apparently the initial library didn't work so i replaced it with the library from another branch which worked on all the machines we used so far
+
+ .../libfractal/libfractal/Makefile                 |  15 ++
+ .../libfractal/libfractal/fractGen.c               | 153 +++++++++++++++++++++
+ .../libfractal/libfractal/fractal.c                | 133 ++++++++++++++++++
+ .../libfractal/libfractal/fractal.h                | 133 ++++++++++++++++++
+ .../libfractal/libfractal/tools.c                  | 103 ++++++++++++++
+ 5 files changed, 537 insertions(+)
+
+commit 29ad7fa999ee2c788d60549bc5652c9af9e8b57d
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Thu May 3 13:23:32 2018 +0200
+
+    a test
+
+ project_2018_template/Makefile | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+commit 722ba579d97c40ca49162208f528876614a3f30a
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Wed May 2 14:36:29 2018 +0200
+
+    main rectifié
+
+ project_2018_template/main.c | 498 ++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 425 insertions(+), 73 deletions(-)
+
+commit bbf6210110312f47457214c24378bce11aa3b800
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Wed May 2 14:07:40 2018 +0200
+
+    main2 for the win
+
+ main2.c | 2039 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 2039 insertions(+)
+
+commit a5e67aa10f2f602ced76763a078e22d161712e2e
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Wed May 2 12:15:30 2018 +0200
+
+    add a ToDo
+
+ To Do | 1 +
+ 1 file changed, 1 insertion(+)
+
+commit 1dcbd6867ab04257e795af95366fbf9d0eae97a5
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Wed May 2 11:49:36 2018 +0200
+
+    added 2 todo
+
+ To Do | 2 ++
+ 1 file changed, 2 insertions(+)
+
+commit d93655f4e2ca113b43b7210e283a4172086b5823
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Wed May 2 11:41:23 2018 +0200
+
+    added 1 solution
+
+ To Do | 1 +
+ 1 file changed, 1 insertion(+)
+
+commit 92ca44909903b103f57509ae33f033ce23f1958a
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Wed May 2 11:39:33 2018 +0200
+
+    Better faster stronger programs
+
+ main.c | 21 ++++++++-------------
+ 1 file changed, 8 insertions(+), 13 deletions(-)
+
+commit 8f3c5b658b3d440b0c10ab79c6df79dbf1c0ef58
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Wed May 2 11:38:54 2018 +0200
+
+    added 1 todo
+
+ To Do | 1 +
+ 1 file changed, 1 insertion(+)
+
+commit 89545966b939589743a449c5c55616860947f3c9
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Wed May 2 11:25:59 2018 +0200
+
+    To Do file pour savoir ce qui nous restent a faire
+
+ To Do | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+commit ba63cdb1299adebbbedfc36bb53fe68e6a93be6c
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Wed May 2 10:59:15 2018 +0200
+
+    well a bit better
+
+ main.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+commit 71f030e2f3cddea5d27bd89e11260b4498c8582d
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Wed May 2 10:49:34 2018 +0200
+
+    the "repaired main", still a lot of errors
+
+ main.c | 68 +++++++++++++++++++++++++++++++++++++++++++-----------------------
+ 1 file changed, 44 insertions(+), 24 deletions(-)
+
+commit d19f9689388ad84d5532ca743eb48f74e3d54c35
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Wed May 2 10:48:19 2018 +0200
+
+    fixed a critical bug
+
+ project_2018_template/main.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+commit db8668eab28a162646382cb251d611a6ccef0924
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Wed May 2 09:16:13 2018 +0200
+
+    add a comment on a potential error
+
+ project_2018_template/main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 1f1c19c12ad2af091100fa063e6bea6c6aa8c1b1
+Author: chauvauxn <37975707+chauvauxn@users.noreply.github.com>
+Date:   Tue May 1 14:00:22 2018 +0200
+
+    add another comment
+
+ project_2018_template/main.c | 93 +++++++++++++++++++++++++++++++-------------
+ 1 file changed, 65 insertions(+), 28 deletions(-)
+
+commit 80da337b7072c9c2d2307c5da4db148684d34410
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Tue May 1 13:47:15 2018 +0200
+
+    implemented the fract gen script
+    
+    uses a.out numbermaxoffractal maxlengthofname File1 File 2...
+
+ fractGen.c | 156 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 156 insertions(+)
+
+commit 792b96905377b72b2be05c28b2f1b3659f5d7788
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Mon Apr 30 10:16:34 2018 +0200
+
+    fixed critical error
+
+ Read.c | 4 ++--
+ main.c | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+commit 3fdbc1e73ecf50bbd1970f475bcc1012ce30fa5d
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Mon Apr 30 10:06:34 2018 +0200
+
+    added the new read2 function with mmap
+
+ Read.c |  365 ++++++++++++
+ main.c | 2026 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 2391 insertions(+)
+
+commit 4f1ce85d25bacc606bb9b532edc3c11cb1b4437c
+Author: chauvauxn <37975707+chauvauxn@users.noreply.github.com>
+Date:   Sun Apr 29 13:16:17 2018 +0200
+
+    begin add comment
+
+ project_2018_template/main.c | 284 +++++++++++++++++++++++++++----------------
+ 1 file changed, 180 insertions(+), 104 deletions(-)
+
+commit 46d53b2e45cca8325b267e2cd680fbf95a2c8e80
+Author: chauvauxn <37975707+chauvauxn@users.noreply.github.com>
+Date:   Sat Apr 28 19:38:01 2018 +0200
+
+    Correction de beug majeur avec -d
+    
+    Seg Fault lorsque le buffer était de taille 1. Problème résoltut :)
+
+ project_2018_template/main.c | 113 ++++++++++++++++++++++++-------------------
+ 1 file changed, 62 insertions(+), 51 deletions(-)
+
+commit ede450d0e5b8a2a36d45f45cd18efe92ec3963ec
+Author: francois1997 <37047753+francois1997@users.noreply.github.com>
+Date:   Fri Apr 27 18:20:41 2018 +0200
+
+    reverted to previous version
+
+ project_2018_template/Read.c |  22 +--
+ project_2018_template/main.c | 338 -------------------------------------------
+ 2 files changed, 3 insertions(+), 357 deletions(-)
+
+commit 385da40cb184a8a35e2c14ea0e3cb56408bceb69
+Merge: d63c40a 307a47c
+Author: francois1997 <37047753+francois1997@users.noreply.github.com>
+Date:   Fri Apr 27 18:16:13 2018 +0200
+
+    added a bit more code though still untested
+
+commit 307a47ca53e46873792c8eded7e5756e57c93d25
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Fri Apr 27 13:12:26 2018 +0200
+
+    The new read function with mmap, NOT YET TESTED
+    
+    the full implementations with mmap for read it has been adapted to work hand in hand withe the split function from main.c
+
+ project_2018_template/Read.c | 255 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 255 insertions(+)
+
+commit bebbb2b20dfa0a538f2eaeba3e1d94dc5146c389
+Author: chauvauxn <37975707+chauvauxn@users.noreply.github.com>
+Date:   Thu Apr 26 18:51:53 2018 +0200
+
+    add of isendofprogram to stop thread
+
+ project_2018_template/main.c | 58 +++++++++++++++++++++++++++++---------------
+ 1 file changed, 38 insertions(+), 20 deletions(-)
+
+commit 65a5a940ccd829ec32bd622731d2fdfbbd9e461b
+Author: francois <37047753+francois1997@users.noreply.github.com>
+Date:   Tue Apr 24 19:12:58 2018 +0200
+
+    Update main.c
+
+ project_2018_template/main.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+commit 5b5c0721c120314d436a6da1b82dc3fdc8c11bf8
+Author: chauvauxn <37975707+chauvauxn@users.noreply.github.com>
+Date:   Tue Apr 24 17:34:11 2018 +0200
+
+    changement ordre creation des threads pour -d
+    
+    la création des consommateur (bitmap) et producteur(calcul) se font maintenant en alternance
+
+ project_2018_template/main.c | 191 ++++++++++++++++++++++++++++++-------------
+ 1 file changed, 132 insertions(+), 59 deletions(-)
+
+commit 976357a28dc3e36e596a5b902fd15e4988e189ac
+Author: chauvauxn <37975707+chauvauxn@users.noreply.github.com>
+Date:   Tue Apr 24 16:42:54 2018 +0200
+
+    Quelques beugs corrigés :)
+
+ project_2018_template/libfractal/fractal.c | 237 +++++++++++++----------------
+ 1 file changed, 103 insertions(+), 134 deletions(-)
+
+commit 4ac5c552f749586e259aeea8002e90dd1dc1d4ee
+Author: chauvauxn <37975707+chauvauxn@users.noreply.github.com>
+Date:   Tue Apr 24 16:41:43 2018 +0200
+
+    first version
+
+ project_2018_template/main.c | 1455 +++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 1452 insertions(+), 3 deletions(-)
+
+commit d63c40a2c23c56f2f9642446ab1a0b647a3d4f6b
+Author: francois1997 <37047753+francois1997@users.noreply.github.com>
+Date:   Tue Apr 3 22:57:31 2018 +0200
+
+    completion of the buffer problem for creationthreads + commentary on how function works
+
+ project_2018_template/main.c | 78 ++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 72 insertions(+), 6 deletions(-)
+
+commit 1d7c5a9a8167125b225b5650a243fcfbb283dc15
+Author: francois1997 <37047753+francois1997@users.noreply.github.com>
+Date:   Tue Apr 3 18:50:13 2018 +0200
+
+    implementation of creation threads
+
+ project_2018_template/main.c | 267 ++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 265 insertions(+), 2 deletions(-)
+
+commit 9fd54967a1b62feef69a9e999ee89adf0ae87962
+Author: francois1997 <37047753+francois1997@users.noreply.github.com>
+Date:   Mon Apr 2 10:45:37 2018 +0200
+
+    Completion of frctal.c file, more details in changelog for V0.2
+
+ project_2018_template/ChangeLog V 0.1.txt  | 10 ++++++++++
+ project_2018_template/libfractal/fractal.c | 28 ++++++++++++++++++----------
+ project_2018_template/libfractal/fractal.h | 22 ++++++++++++++++++++++
+ 3 files changed, 50 insertions(+), 10 deletions(-)
+
+commit e377644cfd750413c1b06a8e37812827a93c2ee5
+Author: francois1997 <37047753+francois1997@users.noreply.github.com>
+Date:   Sun Apr 1 15:34:03 2018 +0200
+
+    Version 0.1, please view Changelog
+
+ project_2018_template/ChangeLog V 0.1.txt  | 12 +++++
+ project_2018_template/libfractal/fractal.c | 86 +++++++++++++++++++++++++++---
+ project_2018_template/libfractal/fractal.h |  9 +++-
+ 3 files changed, 98 insertions(+), 9 deletions(-)
+
+commit fa865bd2860b3d43a1c65f7f3edf1094f8d50a80
+Author: francois1997 <37047753+francois1997@users.noreply.github.com>
+Date:   Sun Apr 1 11:47:10 2018 +0200
+
+    initialisation du template
+
+ project_2018_template/Makefile             |   1 +
+ project_2018_template/libfractal/Makefile  |  15 ++++
+ project_2018_template/libfractal/fractal.c |  54 ++++++++++++++
+ project_2018_template/libfractal/fractal.h | 112 +++++++++++++++++++++++++++++
+ project_2018_template/libfractal/tools.c   | 103 ++++++++++++++++++++++++++
+ project_2018_template/main.c               |  11 +++
+ 6 files changed, 296 insertions(+)

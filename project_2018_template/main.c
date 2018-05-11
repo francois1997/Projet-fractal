@@ -167,6 +167,7 @@ struct listthread *producerthread = NULL;
 struct listthread *consumerthread = NULL;
 struct listfractalhigh *listhigh = NULL;
 pthread_mutex_t verification;
+char *fractour;
 
 
 /*
@@ -189,11 +190,18 @@ int main(int argc, char *argv[])
 
 
     int err;
-    if(argc <=1) //Verification qu'il y ai au moins 2 arguments et donc un fichier au minimum a lire
+    if(argc <= 2) //Verification qu'il y ai au moins 2 arguments et donc un fichier au minimum a lire
     {
           //error(err,"not enouth arguments");
           return -1;
     }
+	fractour = (char *)malloc(strlen(argv[argc-1])*sizeof(char));
+	if (fractour == NULL)
+	{
+		return -1;
+	}
+	strcpy(fractour, argv[argc-1]);
+	
     if(strcmp(argv[1],"-d")==0) //Presence du parametre '-d' dans les arguments
     {
         if(strcmp(argv[2],"--maxthreads")==0) //Presence du parametre '--maxthreads' dans les arguments
@@ -209,7 +217,7 @@ int main(int argc, char *argv[])
             {
               return -1;
             }
-            err = readfile(argc,argv,4,1);
+            err = readfile(argc,argv,5,1);
             if(err == -1)
             {
                 printf("error during read file\n");
@@ -228,7 +236,7 @@ int main(int argc, char *argv[])
             {
               return -1;
             }
-            err = readfile(argc,argv,2,1);
+            err = readfile(argc,argv,3,1);
             if(err == -1)
             {
                 printf("error during read file\n");
@@ -256,7 +264,7 @@ int main(int argc, char *argv[])
             {
               return -1;
             }
-            err = readfile(argc,argv,3,2);
+            err = readfile(argc,argv,4,2);
             if(err == -1)
             {
                 printf("error during read file\n");
@@ -275,7 +283,7 @@ int main(int argc, char *argv[])
             {
               return -1;
             }
-            err = readfile(argc,argv,1,2);
+            err = readfile(argc,argv,2,2);
             if(err == -1)
             {
                 printf("error during read file\n");
@@ -298,6 +306,8 @@ int main(int argc, char *argv[])
 void clean_all()
 {
   printf("Function clean all variables \n");
+  free(fractour);
+  fractour = NULL;
   if(accesname != NULL)
   {
     printallname(accesname);
@@ -729,7 +739,7 @@ int readfile(int argc, char *argv[], int begin, int type)
   int threadval[argc-begin];    // sert a savoir quelle thread ont bien été initialisé
   int trynumber = 0;
   int threadreaderfail = 0;
-  for(int i = begin; (i < argc) && (isendofprogram(end) == 0);i++)
+  for(int i = begin-1; (i < argc-1) && (isendofprogram(end) == 0);i++)
   {
     threadval[i] = 0;
     char * filename = *(argv+i);
@@ -1614,7 +1624,7 @@ int bitmapallfractalhigh(struct listfractalhigh *f)
       suivant = current->next;
       printf("Le nom de la fractal est : %s \n",fractal_get_name(current->fract));
       char name[64+6+1];
-      strcpy(name, "fractout_");
+      strcpy(name, fractour);
       strcat(name, fractal_get_name(current->fract));
       err = write_bitmap_sdl(current->fract, name);
       if(err != 0)
