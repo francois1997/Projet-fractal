@@ -23,4 +23,4 @@ cleangen :
 	rm F* Gen
 
 clean :
-	cd libfractal/ && rm libfractal.a *.o
+	rm main && cd libfractal/ && rm libfractal.a *.o
