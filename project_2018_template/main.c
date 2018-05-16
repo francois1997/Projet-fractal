@@ -739,13 +739,13 @@ int readfile(int argc, char *argv[], int begin, int type)
   int threadval[argc-begin];    // sert a savoir quelle thread ont bien été initialisé
   int trynumber = 0;
   int threadreaderfail = 0;
-  for(int i = begin-1; (i < argc-1) && (isendofprogram(end) == 0);i++)
+  for(int i = begin; (i < argc-1) && (isendofprogram(end) == 0);i++)
   {
-    threadval[i] = 0;
+    threadval[i-begin] = 0;
     char * filename = *(argv+i);
     if (strcmp(filename, stdin) != 0 ||  onelecture != 1) //sert a ignorer l'argument "-" quand il y en a deux ou plus
     {
-      threadval[i] = 1;
+      threadval[i-begin] = 1;
       if (strcmp(filename, stdin) == 0)
       {
         onelecture = 1;
@@ -795,9 +795,9 @@ int readfile(int argc, char *argv[], int begin, int type)
       }
   }
   //Recuperation des threads de lecture
-  for(int i = begin-1; i < argc-1;i++)
+  for(int i = begin; i < argc-1;i++)
   {
-    if (threadval[i])
+    if (threadval[i-begin])
     {
       err = pthread_join(lecteur[i-begin], NULL);
       if(err!=0) //erreur lors d'un thread
